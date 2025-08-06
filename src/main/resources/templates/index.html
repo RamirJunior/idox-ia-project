@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/images/idox-fav.ico" type="image/x-icon">
+    <title>iDox</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="container">
+    <div class="left-panel" ondragover="event.preventDefault()" ondrop="handleDrop(event)">
+        <div class="logo-wrapper">
+            <img src="/images/idox-logotipo1.webp" alt="iDox" title="iDox - PGE" class="logo-img" draggable="false" />
+        </div>
+
+        <label for="file-upload" class="upload-box" id="drop-zone">
+            <span class="material-icons">cloud_upload</span><br>
+            Arraste ou selecione um arquivo de áudio
+            <input type="file" id="file-upload" style="display: none;" />
+        </label>
+
+        <div id="file-info" class="file-info" style="display: none;">
+            <span class="material-icons">insert_drive_file</span>
+            <span id="file-name">audio_file_name</span>
+            <button class="remove-btn" onclick="removeFile()">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+
+        <div id="file-error" class="file-error"></div>
+
+        <div class="bottom-btn">
+            <button id="upload-btn" class="upload-button" disabled>
+                Criar Resumo
+            </button>
+        </div>
+    </div>
+
+    <div class="right-panel">
+
+        <div class="about-button-wrapper">
+            <button class="about-button" onclick="toggleAboutCard()">
+                <span class="material-icons">info</span>
+            </button>
+            <div id="about-card" class="about-card">
+                <strong>iDox</strong> v1.0.0<br>
+                Saiba mais: <a href="https://github.com/RamirJunior/aurapro" target="_blank">iDox</a>
+                <hr>
+                <strong>Ollama</strong> v3.1<br>
+                Saiba mais: <a href="https://github.com/ollama/ollama" target="_blank">Ollama</a><br>
+                <hr>
+                <strong>Whisper Open AI</strong> v1.6.2<br>
+                Saiba mais: <a href="https://github.com/openai/whisper" target="_blank">Whisper</a><br>
+            </div>
+        </div>
+
+
+        <div class="title-row">
+            <div id="loader" class="loader" style="display: none;"></div>
+            <h3 id="summary-title">Resumo do áudio</h3>
+
+        </div>
+
+        <div class="summary-box" id="summary-box"></div>
+
+        <div class="button-row">
+            <button id="copy-btn" class="action-button copy-btn" disabled>
+                <span class="material-icons">content_copy</span>
+                Copiar Resumo
+            </button>
+            <button id="download-btn" class="action-button download-btn" disabled>
+                <span class="material-icons">download</span>
+                Baixar Transcrição em TXT
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast">Texto do resumo copiado com sucesso</div>
+<script src="/js/script.js"></script>
+</body>
+</html>
