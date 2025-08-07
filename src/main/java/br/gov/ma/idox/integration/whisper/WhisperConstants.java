@@ -1,4 +1,4 @@
-package br.gov.ma.idox;
+package br.gov.ma.idox.integration.whisper;
 
 public class WhisperConstants {
 

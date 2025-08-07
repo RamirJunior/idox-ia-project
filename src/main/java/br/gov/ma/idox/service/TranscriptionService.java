@@ -1,4 +1,4 @@
-package br.gov.ma.idox;
+package br.gov.ma.idox.service;
 
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -9,7 +9,7 @@ import java.nio.file.Path;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-import static br.gov.ma.idox.WhisperConstants.*;
+import static br.gov.ma.idox.integration.whisper.WhisperConstants.*;
 
 @Service
 public class TranscriptionService {

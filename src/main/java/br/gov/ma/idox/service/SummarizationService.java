@@ -1,4 +1,4 @@
-package br.gov.ma.idox;
+package br.gov.ma.idox.service;
 
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
