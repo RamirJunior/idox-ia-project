@@ -14,30 +14,29 @@ import java.util.stream.Collectors;
 @Service
 public class SummarizationService {
 
-    private final String LLAMA_PATH = "C:\\Users\\User\\Documents\\projeto\\idox\\llama\\llama.cpp\\build\\bin\\Release\\llama-cli.exe"; // ou seu script wrapper
-    private final String MODEL_LLAMA = "C:\\Users\\User\\Documents\\projeto\\idox\\llama\\llama.cpp\\models\\tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf";
+    private final String LLAMA_PATH = "C:\\Users\\User\\Documents\\projeto\\idox\\llama\\llama.cpp\\build\\bin\\Release\\llama-cli.exe";
+    private final String MODEL_LLAMA = "C:\\Users\\User\\Documents\\projeto\\idox\\llama\\llama.cpp\\models\\nous-hermes-2-mistral-7b-dpo.Q4_K_M.gguf";
 
     @Async
     public CompletableFuture<String> summarizeFile(File txtFile) {
         try {
             // Lê o conteúdo do arquivo
-            StringBuilder content = new StringBuilder();
+            StringBuilder audioText = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(new FileReader(txtFile))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    content.append(line).append("\n");
+                    audioText.append(line).append("\n");
                 }
             }
 
-            String prompt = "Responda sempre em português do Brasil. Quero saber o(s) assunto(s) principal nesse texto. Sempre que possível use tópicos de forma objetiva:\n\n" + content + "\n\n### RESPOSTA:\n";
+            String prompt = "Você especializado em analisar transcrições de reuniões.\nIdentifique os temas discutidos e aponte decisões importantes nessa transcrição:\n" + audioText +"### RESPOSTA:";
 
-
+            System.out.println("Resumo de: " + txtFile.getAbsolutePath());
             ProcessBuilder builder = new ProcessBuilder(
                     LLAMA_PATH,
                     "-m", MODEL_LLAMA,
                     "-p", prompt,
-                    "--no-conversation",
-                    "--n-predict", "512"
+                    "--no-conversation"
             );
 
             builder.redirectErrorStream(true);

@@ -54,6 +54,9 @@ function removeFile() {
 
 uploadBtn.addEventListener('click', () => {
   const file = fileUpload.files[0];
+  const summarizeSwitch = document.getElementById('use-ai-switch');
+  const summarize = summarizeSwitch.checked;
+
   if (!file || !acceptedTypes.includes(file.type)) return;
 
   uploadBtn.disabled = true;
@@ -66,6 +69,7 @@ uploadBtn.addEventListener('click', () => {
 
   const formData = new FormData();
   formData.append('audioFile', file);
+  formData.append('summarize', summarize); // 👈 Aqui incluímos o parâmetro booleano
 
   fetch('http://localhost:8080/idox/process', {
     method: 'POST',
@@ -81,16 +85,20 @@ uploadBtn.addEventListener('click', () => {
       copyBtn.disabled = false;
       downloadBtn.disabled = false;
 
-      summaryBox.innerText = data.summary;
-      summaryTitle.innerText = `Resumo do áudio: ${file.name}`;
+      // Atualiza a caixa de resumo apenas se vier summary
+      if (data.summarize && data.summary) {
+            summaryBox.innerText = data.summary;
+            summaryTitle.innerText = `Resumo do áudio: ${file.name}`;
+      } else {
+            summaryBox.innerText = '';
+            summaryTitle.innerText = `Transcrição do áudio: ${file.name}`;
+      }
 
       downloadBtn.onclick = () => {
-        const fileBaseName = file.name.replace(/\.[^/.]+$/, '');
-        const downloadUrl = `http://localhost:8080/idox/download/${encodeURIComponent(fileBaseName)}_transcription.txt`;
-
+        const downloadUrl = `http://localhost:8080${data.textFileLink}`;
         const a = document.createElement('a');
         a.href = downloadUrl;
-        a.download = `${fileBaseName}_transcription.txt`;
+        a.download = data.textFileLink.split('/').pop(); // nome sugerido
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
