@@ -3,13 +3,14 @@ package br.gov.ma.idox.service;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+
+import static br.gov.ma.idox.integration.llama.LlamaConstants.END_PROMPT;
+import static br.gov.ma.idox.integration.llama.LlamaConstants.START_PROMPT;
 
 @Service
 public class SummarizationService {
@@ -18,37 +19,33 @@ public class SummarizationService {
     private final String MODEL_LLAMA = "C:\\Users\\User\\Documents\\projeto\\idox\\llama\\llama.cpp\\models\\nous-hermes-2-mistral-7b-dpo.Q4_K_M.gguf";
 
     @Async
-    public CompletableFuture<String> summarizeFile(File txtFile) {
+    public CompletableFuture<String> summarizeFile(File transcriptionTextFile) {
         try {
-            // Lê o conteúdo do arquivo
-            StringBuilder audioText = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(new FileReader(txtFile))) {
+            StringBuilder transcriptionText = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new FileReader(transcriptionTextFile))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    audioText.append(line).append("\n");
+                    transcriptionText.append(line).append("\n");
                 }
             }
 
-            String prompt = "Você especializado em analisar transcrições de reuniões.\nIdentifique os temas discutidos e aponte decisões importantes nessa transcrição:\n" + audioText +"### RESPOSTA:";
+            String mountedPrompt = START_PROMPT + transcriptionText + END_PROMPT;
 
-            System.out.println("Resumo de: " + txtFile.getAbsolutePath());
-            ProcessBuilder builder = new ProcessBuilder(
-                    LLAMA_PATH,
-                    "-m", MODEL_LLAMA,
-                    "-p", prompt,
-                    "--no-conversation"
-            );
+            File tempPrompt = createTempPromptFile(mountedPrompt);
+            System.out.println("Local do texto de transcrição: " + transcriptionTextFile.getAbsolutePath());
+            System.out.println("Local temporário do Prompt Llama.cpp: " + tempPrompt.getAbsolutePath());
 
+            ProcessBuilder builder = runLlamaCommand(tempPrompt);
             builder.redirectErrorStream(true);
             Process process = builder.start();
 
-            StringBuilder rawOutput = new StringBuilder();
-            try (BufferedReader processReader = new BufferedReader(
+            StringBuilder rawLlamaResponse = new StringBuilder();
+            try (BufferedReader lineReader = new BufferedReader(
                     new InputStreamReader(process.getInputStream()))) {
 
                 String line;
-                while ((line = processReader.readLine()) != null) {
-                    rawOutput.append(line).append("\n");
+                while ((line = lineReader.readLine()) != null) {
+                    rawLlamaResponse.append(line).append("\n");
                 }
             }
 
@@ -57,24 +54,46 @@ public class SummarizationService {
                 throw new RuntimeException("Erro ao executar LLaMA (exit code " + exitCode + ")");
             }
 
-            String raw = rawOutput.toString();
-            int start = raw.indexOf("### RESPOSTA:");
+            String rawResponse = rawLlamaResponse.toString();
+            int start = rawResponse.indexOf(END_PROMPT);
             if (start >= 0) {
-                String corte = raw.substring(start + "### RESPOSTA:".length());
-                // remove logs extras após a resposta
-                String respostaFinal = Arrays.stream(corte.split("\n"))
+                String sliceRawResponse = rawResponse.substring(start + END_PROMPT.length());
+                String summaryResponse = Arrays.stream(sliceRawResponse.split("\n"))
                         .takeWhile(l -> !l.trim().startsWith("llama_perf_context_print"))
                         .filter(l -> !l.matches(".*(llama|load|sampler|print_info|context|kv_cache|model_loader).*"))
-                        .filter(l -> !l.trim().isEmpty())
+                        .map(l -> l
+                                .replaceAll("^###\\s*RESPOSTA:\\s*", "")
+                                .replaceAll("\\[end of text\\]$", "")
+                                .trim()
+                        )
+                        .filter(l -> !l.isEmpty())
                         .collect(Collectors.joining("\n"));
 
-                return CompletableFuture.completedFuture(respostaFinal.trim());
-            }
+                tempPrompt.delete();
 
+                return CompletableFuture.completedFuture(summaryResponse.trim());
+            }
 
         } catch (Exception e) {
             throw new RuntimeException("Erro ao resumir arquivo: " + e.getMessage(), e);
         }
         return null;
+    }
+
+    private ProcessBuilder runLlamaCommand(File tempPrompt) {
+        ProcessBuilder builder = new ProcessBuilder(
+                LLAMA_PATH,
+                "-m", MODEL_LLAMA,
+                "-f", tempPrompt.getAbsolutePath(),
+                "--no-conversation",
+                "--ctx-size", "8192"
+        );
+        return builder;
+    }
+
+    private static File createTempPromptFile(String mountedPrompt) throws IOException {
+        File tempPromptFile = File.createTempFile("prompt_", ".txt");
+        Files.write(tempPromptFile.toPath(), mountedPrompt.getBytes());
+        return tempPromptFile;
     }
 }

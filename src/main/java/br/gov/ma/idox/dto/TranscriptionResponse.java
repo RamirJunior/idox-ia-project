@@ -11,4 +11,6 @@ public class TranscriptionResponse {
     private String textFileLink;
     private boolean summarize;
     private String summary;
+    private String taskId;
+    private String status;
 }

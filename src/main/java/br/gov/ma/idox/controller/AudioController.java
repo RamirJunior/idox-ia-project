@@ -1,31 +1,20 @@
 package br.gov.ma.idox.controller;
 
 
+import br.gov.ma.idox.dto.TranscriptionResponse;
 import br.gov.ma.idox.service.SummarizationService;
 import br.gov.ma.idox.service.TranscriptionService;
-import br.gov.ma.idox.dto.TranscriptionResponse;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.CompletableFuture;
 
 @Controller
@@ -47,7 +36,7 @@ public class AudioController {
     @PostMapping("/process")
     public CompletableFuture<ResponseEntity<TranscriptionResponse>> transcribe(
             @NotNull @RequestParam("audioFile") MultipartFile audioFile,
-            @RequestParam("summarize") Boolean summarize) throws IOException {
+            @RequestParam("summarize") Boolean summarize) throws Exception {
 
         return transcriptionService.transcribe(audioFile, summarize)
                 .thenApply(ResponseEntity::ok);
@@ -72,5 +61,16 @@ public class AudioController {
                 });
 
         return output;
+    }
+
+    @DeleteMapping("/cancel/{taskId}")
+    public ResponseEntity<String> cancelProcess(@PathVariable String taskId) {
+        boolean cancelled = transcriptionService.cancelProcess(taskId);
+
+        if (cancelled) {
+            return ResponseEntity.ok("Processo com taskId " + taskId + " cancelado com sucesso.");
+        } else {
+            return ResponseEntity.status(404).body("Nenhum processo ativo encontrado para o taskId: " + taskId);
+        }
     }
 }

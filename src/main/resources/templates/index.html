@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,13 +13,13 @@
 <div class="container">
     <div class="left-panel" ondragover="event.preventDefault()" ondrop="handleDrop(event)">
         <div class="logo-wrapper">
-            <img src="/images/idox-logotipo1.webp" alt="iDox" title="iDox - PGE" class="logo-img" draggable="false" />
+            <img src="/images/idox-logotipo1.webp" alt="iDox" title="iDox - PGE" class="logo-img" draggable="false"/>
         </div>
 
         <label for="file-upload" class="upload-box" id="drop-zone">
             <span class="material-icons">cloud_upload</span><br>
             Arraste ou selecione um arquivo de áudio
-            <input type="file" id="file-upload" style="display: none;" />
+            <input type="file" id="file-upload" style="display: none;"/>
         </label>
 
         <div id="file-info" class="file-info" style="display: none;">
