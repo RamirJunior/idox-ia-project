@@ -11,6 +11,11 @@ import java.time.Instant;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(TranscriptionException.class)
+    public ResponseEntity<ErrorResponse> handleWhisper(TranscriptionException err) {
+        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "ERR_WHISPER_FAIL", err.getMessage());
+    }
+
     @ExceptionHandler(WhisperProcessingException.class)
     public ResponseEntity<ErrorResponse> handleWhisper(WhisperProcessingException err) {
         return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "ERR_WHISPER_FAIL", err.getMessage());

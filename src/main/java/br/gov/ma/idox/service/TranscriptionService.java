@@ -1,125 +1,143 @@
 package br.gov.ma.idox.service;
 
 import br.gov.ma.idox.dto.TranscriptionResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import br.gov.ma.idox.exception.TranscriptionException;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static br.gov.ma.idox.integration.whisper.WhisperConstants.*;
-
 @Service
+@AllArgsConstructor
+@Slf4j
 public class TranscriptionService {
 
-    @Autowired
-    private SummarizationService summarizationService;
+    private final AiService aiService;
+    private final UploadDirectoryService uploadService;
+    private final SummarizationService summarizationService;
 
-    // Map para guardar processos ativos e poder cancelar depois
     private final ConcurrentHashMap<String, Process> processMap = new ConcurrentHashMap<>();
 
     @Async
     public CompletableFuture<TranscriptionResponse> transcribe(MultipartFile audioFile, boolean summarize) {
         try {
-            ensureUploadDirectoryExists();
-
-            // Gera um ID único para essa tarefa/processo
+            ensureUploadDirectoryExists(uploadService.getUploadDir());
             String taskId = UUID.randomUUID().toString();
 
-            String hashedFileName = hashFileName(audioFile.getOriginalFilename());
-            Path savedPath = Path.of(UPLOAD_DIR, hashedFileName);
-            File file = savedPath.toFile();
-            audioFile.transferTo(file);
+            File savedFile = saveFile(audioFile);
+            Process process = startWhisperProcess(savedFile);
 
-            ProcessBuilder builder = runWhisperCommand(file, savedPath);
-            Process process = builder.start();
-
-            // Guarda o processo no mapa com o taskId
             processMap.put(taskId, process);
-            System.out.println("taskId do processo: " + taskId);
+            log.info("Iniciando tarefa com taskId: {}", taskId);
 
-            // Executa assincronamente o processamento e retorna o CompletableFuture
-            return CompletableFuture.supplyAsync(() -> {
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                    reader.lines().forEach(System.out::println);
-                } catch (Exception e) {
-                    throw new RuntimeException("Erro lendo output do processo: " + e.getMessage(), e);
-                }
+            readProcessOutput(process);
 
-                try {
-                    int exitCode = process.waitFor();
+            int exitCode = process.waitFor();
+            processMap.remove(taskId);
 
-                    // Processo terminou, remove do mapa
-                    processMap.remove(taskId);
+            if (exitCode != 0) {
+                throw new TranscriptionException("Processo Whisper falhou com código: " + exitCode);
+            }
 
-                    if (exitCode != 0) {
-                        throw new RuntimeException("Erro ao executar Whisper (código " + exitCode + ")");
-                    }
+            TranscriptionResponse response = buildResponse(savedFile.toPath(), summarize, taskId);
 
-                    File txtFile = new File(savedPath.toString().replace(".wav", ".txt"));
-                    if (!txtFile.exists()) {
-                        throw new RuntimeException("Arquivo de transcrição não encontrado.");
-                    }
+            return CompletableFuture.completedFuture(response);
 
-                    TranscriptionResponse response = new TranscriptionResponse();
-                    response.setTextFileLink("/uploads/" + txtFile.getName());
-                    response.setSummarize(summarize);
-                    response.setTaskId(taskId);  // Inclui o taskId no DTO
-
-                    if (summarize) {
-                        String resumo = summarizationService.summarizeFile(txtFile).get();
-                        response.setSummary(resumo);
-                    }
-
-                    return response;
-
-                } catch (Exception e) {
-                    throw new RuntimeException("Erro no processamento: " + e.getMessage(), e);
-                }
-            });
         } catch (Exception e) {
+            log.error("Erro durante transcrição", e);
             return CompletableFuture.failedFuture(e);
         }
     }
 
-    // Método para cancelar processo dado um taskId
     public boolean cancelProcess(String taskId) {
         Process process = processMap.get(taskId);
         if (process != null && process.isAlive()) {
             process.destroy();
             processMap.remove(taskId);
+            log.info("Processo com taskId cancelado: {}", taskId);
             return true;
         }
         return false;
     }
 
-    private static ProcessBuilder runWhisperCommand(File file, Path savedPath) {
+    private File saveFile(MultipartFile audioFile) throws IOException {
+        String fileName = generateUniqueFileName(audioFile.getOriginalFilename());
+        Path path = Paths.get(uploadService.getUploadDir(), fileName);
+        audioFile.transferTo(path.toFile());
+        log.info("Arquivo salvo em: {}", path);
+        return path.toFile();
+    }
+
+    private Process startWhisperProcess(File file) throws IOException {
+        ProcessBuilder builder = runWhisperCommand(file);
+        log.info("Iniciando Whisper com comando: {}", String.join(" ", builder.command()));
+        return builder.start();
+    }
+
+    private void readProcessOutput(Process process) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            reader.lines().forEach(log::info);
+        }
+    }
+
+    private TranscriptionResponse buildResponse(Path savedPath, boolean summarize, String taskId) throws Exception {
+        File txtFile = new File(savedPath.toString().replace(".wav", ".txt"));
+        if (!txtFile.exists()) {
+            throw new TranscriptionException("Arquivo de transcrição não encontrado em: " + txtFile.getAbsolutePath());
+        }
+
+        TranscriptionResponse response = new TranscriptionResponse();
+        response.setTextFileLink("/uploads/" + txtFile.getName());
+        response.setSummarize(summarize);
+        response.setTaskId(taskId);
+
+        if (summarize) {
+            String summary = summarizationService.summarizeFile(txtFile).get();
+            response.setSummary(summary);
+            log.info("Resumo gerado para a taskId: {}", taskId);
+        }
+        return response;
+    }
+
+    private void ensureUploadDirectoryExists(String uploadPath) throws IOException {
+        Path path = Paths.get(uploadPath);
+        if (!Files.exists(path)) {
+            Files.createDirectories(path);
+            log.info("Pasta Uploads criada em: {}", uploadPath);
+        }
+    }
+
+    private ProcessBuilder runWhisperCommand(File file) {
+        String whisperBinPath = aiService.getWhisperExecutor();
+        String whisperModelPath = aiService.getWhisperModel();
+
         return new ProcessBuilder(
-                WHISPER_PATH,
-                "-m", MODEL_PATH,
+                whisperBinPath,
+                "-m", whisperModelPath,
                 "-f", file.getAbsolutePath(),
                 "-l", "pt",
                 "-pp",
                 "-nt",
-                "-of", savedPath.toString().replace(".wav", ""),
+                "-of", file.getAbsolutePath().replace(".wav", ""),
                 "-otxt"
         );
     }
 
-    private static String hashFileName(String fileName) {
-        String baseName = fileName != null ? fileName.replaceAll("\\.[^.]+$", "") : "audio";
-        return UUID.randomUUID() + "-" + baseName + ".wav";
-    }
-
-    private static void ensureUploadDirectoryExists() {
-        File uploadDir = new File(UPLOAD_DIR);
-        if (!uploadDir.exists()) uploadDir.mkdirs();
+    private static String generateUniqueFileName(String originalFilename) {
+        String baseName = (originalFilename != null) ?
+                originalFilename.replaceAll("\\.[^.]+$", "") : "audio";
+        return baseName + "-" + UUID.randomUUID() + ".wav";
     }
 }

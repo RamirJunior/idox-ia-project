@@ -1,5 +1,6 @@
 package br.gov.ma.idox.service;
 
+import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -13,10 +14,10 @@ import static br.gov.ma.idox.integration.llama.LlamaConstants.END_PROMPT;
 import static br.gov.ma.idox.integration.llama.LlamaConstants.START_PROMPT;
 
 @Service
+@AllArgsConstructor
 public class SummarizationService {
 
-    private final String LLAMA_PATH = "C:\\Users\\User\\Documents\\projeto\\idox\\llama\\llama.cpp\\build\\bin\\Release\\llama-cli.exe";
-    private final String MODEL_LLAMA = "C:\\Users\\User\\Documents\\projeto\\idox\\llama\\llama.cpp\\models\\nous-hermes-2-mistral-7b-dpo.Q4_K_M.gguf";
+    private final AiService aiService;
 
     @Async
     public CompletableFuture<String> summarizeFile(File transcriptionTextFile) {
@@ -35,7 +36,7 @@ public class SummarizationService {
             System.out.println("Local do texto de transcrição: " + transcriptionTextFile.getAbsolutePath());
             System.out.println("Local temporário do Prompt Llama.cpp: " + tempPrompt.getAbsolutePath());
 
-            ProcessBuilder builder = runLlamaCommand(tempPrompt);
+            ProcessBuilder builder = runLlamaCommand(tempPrompt, aiService.getLlamaExecutor(), aiService.getLlamaModel());
             builder.redirectErrorStream(true);
             Process process = builder.start();
 
@@ -80,10 +81,10 @@ public class SummarizationService {
         return null;
     }
 
-    private ProcessBuilder runLlamaCommand(File tempPrompt) {
+    private ProcessBuilder runLlamaCommand(File tempPrompt, String llamaBinPath, String llamaModelPath) {
         ProcessBuilder builder = new ProcessBuilder(
-                LLAMA_PATH,
-                "-m", MODEL_LLAMA,
+                llamaBinPath,
+                "-m", llamaModelPath,
                 "-f", tempPrompt.getAbsolutePath(),
                 "--no-conversation",
                 "--ctx-size", "8192"
