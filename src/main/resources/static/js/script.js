@@ -81,6 +81,7 @@ function removeFile() {
   uploadBtn.classList.remove('cancel'); // garante que não tenha classe de cancelar
   uploadBtn.textContent = 'Analisar Áudio'; // texto padrão
 
+    summarizeSwitch.checked = false;
   summarizeSwitch.disabled = true;
   if (removeFileBtn) removeFileBtn.disabled = true;
 
@@ -254,10 +255,12 @@ function toggleAboutCard() {
 document.addEventListener('click', function (event) {
   const card = document.getElementById('about-card');
   const button = document.querySelector('.about-button');
-  if (!card.contains(event.target) && !button.contains(event.target)) {
+
+  if (card.style.display === 'block' && !card.contains(event.target) && !button.contains(event.target)) {
     card.style.display = 'none';
   }
 });
+
 
 // Drag & Drop
 
@@ -291,3 +294,4 @@ function handleDrop(event) {
 badgeContainer.querySelectorAll('.badge').forEach(badge => {
   badge.addEventListener('click', onBadgeClick);
 });
+

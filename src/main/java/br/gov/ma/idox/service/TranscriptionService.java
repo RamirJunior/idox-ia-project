@@ -1,6 +1,7 @@
 package br.gov.ma.idox.service;
 
 import br.gov.ma.idox.dto.TranscriptionResponse;
+import br.gov.ma.idox.exception.ProcessInterruptedByUserException;
 import br.gov.ma.idox.exception.TranscriptionException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,32 +28,39 @@ public class TranscriptionService {
     private final AiService aiService;
     private final UploadDirectoryService uploadService;
     private final SummarizationService summarizationService;
-
     private final ConcurrentHashMap<String, Process> processMap = new ConcurrentHashMap<>();
+    private static final int CODE_REQUESTED_BY_USER = 143;
 
     @Async
-    public CompletableFuture<TranscriptionResponse> transcribe(MultipartFile audioFile, boolean summarize) {
+    public CompletableFuture<TranscriptionResponse> transcribe(TaskService taskService, MultipartFile audioFile, boolean summarize, String taskId) {
+
         try {
+            taskService.updateStatus(taskId, "AGUARDANDO", "iDox está salvando arquivo.");
             ensureUploadDirectoryExists(uploadService.getUploadDir());
-            String taskId = UUID.randomUUID().toString();
-
             File savedFile = saveFile(audioFile);
+
+            taskService.updateStatus(taskId, "PROCESSANDO", "Analisando áudio com Whisper.");
             Process process = startWhisperProcess(savedFile);
-
             processMap.put(taskId, process);
-            log.info("Iniciando tarefa com taskId: {}", taskId);
 
+            log.info("Iniciando tarefa com taskId: {}", taskId);
             readProcessOutput(process);
 
             int exitCode = process.waitFor();
             processMap.remove(taskId);
 
+            if (exitCode == CODE_REQUESTED_BY_USER){
+                taskService.updateStatus(taskId, "CANCELADO", "Processo cancelado pelo usuário");
+                throw new ProcessInterruptedByUserException("Processo cancelado pelo usuário.");
+            }
+
             if (exitCode != 0) {
+                taskService.updateStatus(taskId, "FALHA", "Falha durante serviço Whisper.");
                 throw new TranscriptionException("Processo Whisper falhou com código: " + exitCode);
             }
 
-            TranscriptionResponse response = buildResponse(savedFile.toPath(), summarize, taskId);
-
+            taskService.updateStatus(taskId, "PROCESSANDO", "Gerando arquivo de texto transcrito.");
+            TranscriptionResponse response = buildResponse(taskService, savedFile.toPath(), summarize, taskId);
             return CompletableFuture.completedFuture(response);
 
         } catch (Exception e) {
@@ -61,7 +69,7 @@ public class TranscriptionService {
         }
     }
 
-    public boolean cancelProcess(String taskId) {
+    public boolean cancelProcess(TaskService taskService, String taskId) {
         Process process = processMap.get(taskId);
         if (process != null && process.isAlive()) {
             process.destroy();
@@ -82,7 +90,7 @@ public class TranscriptionService {
 
     private Process startWhisperProcess(File file) throws IOException {
         ProcessBuilder builder = runWhisperCommand(file);
-        log.info("Iniciando Whisper com comando: {}", String.join(" ", builder.command()));
+        log.info("Comando Whisper: {}", String.join(" ", builder.command()));
         return builder.start();
     }
 
@@ -92,9 +100,10 @@ public class TranscriptionService {
         }
     }
 
-    private TranscriptionResponse buildResponse(Path savedPath, boolean summarize, String taskId) throws Exception {
+    private TranscriptionResponse buildResponse(TaskService taskService, Path savedPath, boolean summarize, String taskId) throws Exception {
         File txtFile = new File(savedPath.toString().replace(".wav", ".txt"));
         if (!txtFile.exists()) {
+            taskService.updateStatus(taskId, "FALHA", "Arquivo de texto não encontrado.");
             throw new TranscriptionException("Arquivo de transcrição não encontrado em: " + txtFile.getAbsolutePath());
         }
 
@@ -102,12 +111,16 @@ public class TranscriptionService {
         response.setTextFileLink("/uploads/" + txtFile.getName());
         response.setSummarize(summarize);
         response.setTaskId(taskId);
+        taskService.updateLink(taskId, response.getTextFileLink());
 
         if (summarize) {
-            String summary = summarizationService.summarizeFile(txtFile).get();
+            taskService.updateStatus(taskId, "PROCESSANDO", "Iniciando sumarização com Llama.");
+            String summary = summarizationService.summarizeFile(taskService, txtFile, taskId).get();
             response.setSummary(summary);
             log.info("Resumo gerado para a taskId: {}", taskId);
         }
+        response.setSituation("Processamento iDox finalizado.");
+        response.setStatus("FINALIZADO");
         return response;
     }
 

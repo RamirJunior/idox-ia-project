@@ -13,7 +13,7 @@
 </head>
 <body>
 <div class="old-logo-wrapper">
-    <img src="/images/idox-logotipo1.webp" alt="Logo Antiga" class="old-logo-img" />
+    <img src="/images/idox-logotipo1.webp" title="iDox - PGE" class="old-logo-img" />
 </div>
 <div class="container">
     <div class="left-panel" ondragover="event.preventDefault()" ondrop="handleDrop(event)">
@@ -43,17 +43,15 @@
         <div id="file-error" class="file-error"></div>
 
         <div class="bottom-btn">
-            <button id="upload-btn" class="upload-button" disabled>
-                Analisar Áudio
-            </button>
-
             <div class="switch-wrapper">
                 <label class="switch-label">
                     <input type="checkbox" id="use-ai-switch" class="switch-input">
                     <span class="switch-slider"></span>Criar Resumo com IA
                 </label>
             </div>
-
+            <button id="upload-btn" class="upload-button" disabled>
+                Analisar Áudio
+            </button>
         </div>
     </div>
 
@@ -75,29 +73,37 @@
             </div>
         </div>
 
-
         <div class="title-row">
             <div id="loader" class="loader" style="display: none;"></div>
             <h3 id="summary-title">Resumo do áudio</h3>
-
         </div>
 
-        <div class="summary-box" id="summary-box"></div>
+        <div class="summary-box" id="summary-box">
+            <div class="summary-actions">
+                <button id="copy-small-btn" class="small-action-btn" title="Copiar">
+                    <span class="material-icons">content_copy</span>
+                </button>
+            </div>
+            <div id="summary-content"></div>
+        </div>
+
 
         <div class="button-row">
-            <button id="copy-btn" class="action-button copy-btn" disabled>
-                <span class="material-icons">content_copy</span>
-                Copiar Resumo
-            </button>
             <button id="download-btn" class="action-button download-btn" disabled>
-                <span class="material-icons">download</span>
+                <span class="material-icons">text_snippet</span>
                 Baixar Transcrição em TXT
             </button>
         </div>
     </div>
 </div>
 
-<div id="toast" class="toast">Texto do resumo copiado com sucesso</div>
+<div id="toast" class="toast">Texto Copiado</div>
+
 <script src="/js/script.js"></script>
+
+<footer class="footer-note">
+    Whisper e Ollama podem cometer erros. Revise as informações ao copiar/baixar dados gerados.
+</footer>
+
 </body>
 </html>

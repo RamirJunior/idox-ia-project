@@ -5,6 +5,7 @@ body {
   padding: 0;
   display: flex;
   height: 100vh;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background-image: url('/images/bg2.webp');
@@ -151,13 +152,13 @@ body {
 
 .title-row {
   display: flex;
-  align-items: center;
+  align-items: left;
   gap: 10px;
 }
 
 .title-row h3 {
   font-size: 18px;
-  text-align: center;
+  text-align: left;
   flex: 1;
 }
 
@@ -354,43 +355,49 @@ body {
   color: #f8fbca;
   cursor: pointer;
   user-select: none;
+  gap: 4px;
 }
 
+/* Base do toggle */
 .switch-input {
-  position: relative;
-  width: 40px;
-  height: 20px;
+    appearance: none;
   -webkit-appearance: none;
-  appearance: none;
-  background: #3c3c3c;
+  position: relative;
+  width: 30px;
+  height: 23px;
+  background: #3d3d3d;
+  border-radius: 4px;
   outline: none;
-  border-radius: 20px;
-  transition: 0.3s;
   cursor: pointer;
+  transition: background-color 0.3s ease;
+  border: none;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.05);
 }
 
 .switch-input::before {
-  content: "";
+  content: "||";
   position: absolute;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  top: 1px;
-  left: 1px;
+  width: 10px;
+  height: 19px;
+  top: 2px;
+  left: 2px;
   background: white;
-  transition: 0.3s;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  transition: transform 0.3s ease;
 }
 
+/* Quando ativado */
 .switch-input:checked {
-  background: #5ccb5f;
+  background: #34c759;
 }
 
 .switch-input:checked::before {
-  transform: translateX(20px);
+  transform: translateX(17px);
 }
 
 #badge-container {
-  display: flex; /* já está flex, mas reforça */
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
 }
@@ -406,10 +413,10 @@ body {
   background-color: #54582f;
   color: #f8de7e;
   border: none;
-  padding: 8px; /* Aumentado */
+  padding: 8px;
   border-radius: 12px;
   cursor: pointer;
-  font-size: 15px; /* Aumentado */
+  font-size: 15px;
   user-select: none;
   transition: background-color 0.2s;
 }
@@ -490,9 +497,9 @@ body {
   position: fixed;
   top: 20px;
   left: 20px;
-  z-index: 30; /* acima do container e do background */
+  z-index: 30;
   user-select: none;
-  pointer-events: none; /* evita que atrapalhe cliques */
+  pointer-events: none;
 }
 
 .old-logo-img {
@@ -510,32 +517,33 @@ body {
       align-items: flex-start;
       height: auto;
       padding: 16px;
-      font-size: 18px; /* Fonte maior */
+      font-size: 18px;
       overflow-x: hidden;
       background-image: url('/images/bg2.webp');
       background-repeat: repeat;
       background-size: 400px 400px;
     }
 
-  .old-logo-wrapper { /* fixa na tela */
-      top: 10px; /* um espacinho do topo */
-      left: 50%; /* centraliza horizontalmente */
-      transform: translateX(-50%); /* ajusta para ficar centralizada mesmo */
+  .old-logo-wrapper {
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
       width: auto;
-      max-width: 150px; /* fica acima de tudo */
-      pointer-events: none; /* para não atrapalhar cliques */
+      max-width: 150px;
+      pointer-events: none;
       user-select: none;
       background: transparent;
     }
 
     .old-logo-img {
-        max-height: 30px; /* menor para não apertar layout */
+        max-height: 30px;
         height: auto;
         width: auto;
       }
 
   .container {
-      margin-top: 40px; /* espaço suficiente para a logo fixa */
+      border: 0;
+      margin-top: 40px;
       flex-direction: column;
       width: 100%;
       max-width: 100%;
@@ -544,7 +552,7 @@ body {
       overflow-x: hidden;
       margin-left: auto;
       margin-right: auto;
-      padding: 0px;
+      padding-bottom: 40px;
       box-sizing: border-box;
       background: transparent;
     }
@@ -558,16 +566,17 @@ body {
     box-sizing: border-box;
     overflow-wrap: break-word;
     overflow-x: hidden;
+    margin-bottom: 4px;
   }
 
   .left-panel h2 {
-    font-size: 26px; /* maior título */
+    font-size: 26px;
     text-align: center;
   }
 
   .upload-box {
     padding: 20px 12px;
-    font-size: 18px; /* fonte maior */
+    font-size: 18px;
     box-sizing: border-box;
     max-width: 100%;
     overflow-wrap: break-word;
@@ -624,6 +633,12 @@ body {
     box-sizing: border-box;
   }
 
+  .about-button-wrapper {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+  }
+
   .toast {
     right: 10px;
     left: 10px;
@@ -670,7 +685,61 @@ body {
   }
 
   .badge {
-    padding: 12px 18px; /* maior no mobile */
+    padding: 12px 18px;
     font-size: 16px;
   }
+}
+
+
+.summary-box {
+  position: relative;
+  background-color: #edf2f7;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  padding: 16px;
+  height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-size: 14px;
+  user-select: text;
+}
+
+.small-action-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border: none;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.small-action-btn:hover:enabled {
+  background-color: rgba(0, 0, 0, 0.15);
+}
+
+.small-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.small-action-btn .material-icons {
+  font-size: 14px;
+}
+
+.footer-note {
+    font-style: italic;
+  text-align: center;
+  font-size: 12px;
+  color: #f9f9f9;
+  padding: 10px 0;
+  background: transparent;
+  user-select: none;
+  font-family: 'Montserrat', sans-serif;
 }

@@ -7,11 +7,10 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class TranscriptionResponse {
+public class TaskStatusResponse {
     private String taskId;
-    private boolean summarize;
     private String status;
     private String situation;
-    private String textFileLink;
+    private String link;
     private String summary;
 }

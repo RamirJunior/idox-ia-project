@@ -1,21 +1,19 @@
 package br.gov.ma.idox.controller;
 
 
-import br.gov.ma.idox.dto.TranscriptionResponse;
+import br.gov.ma.idox.dto.TaskIdResponse;
+import br.gov.ma.idox.dto.TaskStatusResponse;
 import br.gov.ma.idox.service.SummarizationService;
+import br.gov.ma.idox.service.TaskService;
 import br.gov.ma.idox.service.TranscriptionService;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
 
 @Controller
 @RequestMapping("/idox")
@@ -23,9 +21,8 @@ import java.util.concurrent.CompletableFuture;
 public class AudioController {
 
     @Autowired
+    private TaskService taskService;
     private final TranscriptionService transcriptionService;
-
-    @Autowired
     private final SummarizationService summarizationService;
 
     @GetMapping("/index")
@@ -34,43 +31,48 @@ public class AudioController {
     }
 
     @PostMapping("/process")
-    public CompletableFuture<ResponseEntity<TranscriptionResponse>> transcribe(
+    public ResponseEntity<TaskIdResponse> transcribe(
             @NotNull @RequestParam("audioFile") MultipartFile audioFile,
             @RequestParam("summarize") Boolean summarize) throws Exception {
 
-        return transcriptionService.transcribe(audioFile, summarize)
-                .thenApply(ResponseEntity::ok);
+        var taskIdResponse = taskService.startTask(audioFile, summarize);
+
+        return ResponseEntity.status(HttpStatus.OK).body(taskIdResponse);
     }
 
-    @PostMapping("/summarize")
-    public DeferredResult<ResponseEntity<String>> summarizeTxt(@RequestParam("file") MultipartFile file) throws IOException {
-        DeferredResult<ResponseEntity<String>> output = new DeferredResult<>(360_000L); // 60 segundos
-
-        File tempFile = File.createTempFile("upload-", ".txt");
-        file.transferTo(tempFile);
-
-        summarizationService.summarizeFile(tempFile)
-                .thenAccept(summary -> {
-                    tempFile.delete();
-                    output.setResult(ResponseEntity.ok(summary));
-                })
-                .exceptionally(ex -> {
-                    tempFile.delete();
-                    output.setErrorResult(ResponseEntity.status(500).body("Erro: " + ex.getMessage()));
-                    return null;
-                });
-
-        return output;
-    }
+//    @PostMapping("/summarize")
+//    public DeferredResult<ResponseEntity<String>> summarizeTxt(@RequestParam("file") MultipartFile file) throws IOException {
+//        DeferredResult<ResponseEntity<String>> output = new DeferredResult<>(360_000L);
+//
+//        File tempFile = File.createTempFile("upload-", ".txt");
+//        file.transferTo(tempFile);
+//
+//        summarizationService.summarizeFile(tempFile)
+//                .thenAccept(summary -> {
+//                    tempFile.delete();
+//                    output.setResult(ResponseEntity.ok(summary));
+//                })
+//                .exceptionally(ex -> {
+//                    tempFile.delete();
+//                    output.setErrorResult(ResponseEntity.status(500).body("Erro: " + ex.getMessage()));
+//                    return null;
+//                });
+//
+//        return output;
+//    }
 
     @DeleteMapping("/cancel/{taskId}")
-    public ResponseEntity<String> cancelProcess(@PathVariable String taskId) {
-        boolean cancelled = transcriptionService.cancelProcess(taskId);
+    public ResponseEntity<TaskStatusResponse> cancelProcess(@PathVariable String taskId) {
+        var cancelledTask = taskService.cancelTask(taskId);
+        return ResponseEntity.status(HttpStatus.OK).body(cancelledTask);
+    }
 
-        if (cancelled) {
-            return ResponseEntity.ok("Processo com taskId " + taskId + " cancelado com sucesso.");
-        } else {
-            return ResponseEntity.status(404).body("Nenhum processo ativo encontrado para o taskId: " + taskId);
+    @GetMapping("/status/{taskId}")
+    public ResponseEntity<TaskStatusResponse> getStatus(@PathVariable String taskId) {
+        TaskStatusResponse status = taskService.getStatus(taskId);
+        if (status == null) {
+            return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.ok(status);
     }
 }
