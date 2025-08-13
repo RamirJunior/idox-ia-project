@@ -16,29 +16,19 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "ERR_WHISPER_FAIL", err.getMessage());
     }
 
-    @ExceptionHandler(WhisperProcessingException.class)
-    public ResponseEntity<ErrorResponse> handleWhisper(WhisperProcessingException err) {
-        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "ERR_WHISPER_FAIL", err.getMessage());
+    @ExceptionHandler(ProcessInterruptedByUserException.class)
+    public ResponseEntity<ErrorResponse> cancelledByUser(ProcessInterruptedByUserException err) {
+        return buildError(HttpStatus.ACCEPTED, "CANCELLED_BY_USER", err.getMessage());
     }
 
-    @ExceptionHandler(LlamaProcessingException.class)
-    public ResponseEntity<ErrorResponse> handleLlama(LlamaProcessingException err) {
-        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "ERR_LLAMA_FAIL", err.getMessage());
+    @ExceptionHandler(TaskCancellationException.class)
+    public ResponseEntity<ErrorResponse> failToCancelTask(TaskCancellationException err) {
+        return buildError(HttpStatus.GONE, "CANCELLATION_FAILED", err.getMessage());
     }
 
     @ExceptionHandler(UnsupportedAudioFormatException.class)
     public ResponseEntity<ErrorResponse> handleFormat(UnsupportedAudioFormatException err) {
         return buildError(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "ERR_UNSUPPORTED_FORMAT", err.getMessage());
-    }
-
-    @ExceptionHandler(TooManyRequestsException.class)
-    public ResponseEntity<ErrorResponse> handleTooMany(TooManyRequestsException err) {
-        return buildError(HttpStatus.TOO_MANY_REQUESTS, "ERR_TOO_MANY_REQUESTS", err.getMessage());
-    }
-
-    @ExceptionHandler(AudioProcessingTimeOutException.class)
-    public ResponseEntity<ErrorResponse> handleTimeout(AudioProcessingTimeOutException err) {
-        return buildError(HttpStatus.GATEWAY_TIMEOUT, "ERR_AUDIO_TIMEOUT", err.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
