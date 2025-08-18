@@ -1,297 +1,257 @@
-// Referências aos elementos HTML
-const fileUpload = document.getElementById('file-upload');
-const fileInfo = document.getElementById('file-info');
-const fileNameSpan = document.getElementById('file-name');
-const uploadBtn = document.getElementById('upload-btn');
-const downloadBtn = document.getElementById('download-btn');
-const copyBtn = document.getElementById('copy-btn');
-const summaryBox = document.getElementById('summary-box');
-const toast = document.getElementById('toast');
-const fileError = document.getElementById('file-error');
-const loader = document.getElementById('loader');
-const summaryTitle = document.getElementById('summary-title');
-const container = document.querySelector('.container');
+document.addEventListener('DOMContentLoaded', () => {
+    const fileInput = document.getElementById('file-upload');
+    const fileInfo = document.getElementById('file-info');
+    const fileNameElement = document.getElementById('file-name');
+    const removeButton = document.querySelector('.remove-btn');
+    const uploadButton = document.getElementById('upload-btn');
+    const toggleSwitch = document.getElementById('use-ai-switch');
+    const loaderTitle = document.getElementById('loader-title');
+    const summaryContent = document.getElementById('summary-content');
+    const downloadButton = document.getElementById('download-btn');
+    const downloadIcon = document.getElementById('download-icon');
+    const downloadText = document.getElementById('download-text');
+    const errorList = document.getElementById('error-list');
+    const noFileMessage = document.getElementById('no-file-message');
+    const dropZone = document.getElementById('drop-zone');
 
-const summarizeSwitch = document.getElementById('use-ai-switch');
-const removeFileBtn = document.querySelector('.remove-btn');
-const aboutButton = document.querySelector('.about-button');
+    let isProcessing = false;
 
-const badgeContainer = document.getElementById('badge-container');
+    // Função para lidar com a seleção de arquivo
+    fileInput.addEventListener('change', handleFileUpload);
 
-const acceptedTypes = [
-  'audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/x-wav',
-  'audio/mp4', 'audio/aac', 'audio/x-m4a', 'audio/ogg'
-];
+    // Função para remover o arquivo
+    removeButton.addEventListener('click', removeFile);
 
-let isProcessing = false;
-let currentFetchController = null;
-
-// Reseta badges removendo a classe 'active'
-function resetBadges() {
-  const badges = badgeContainer.querySelectorAll('.badge.active');
-  badges.forEach(badge => badge.classList.remove('active'));
-}
-
-// Controla visibilidade e interatividade do container de badges
-function setBadgeContainerEnabled(enabled) {
-  if (enabled) {
-    badgeContainer.style.display = 'flex'; // mostra container
-    badgeContainer.style.opacity = '1';
-    badgeContainer.style.pointerEvents = 'auto'; // habilita clique
-  } else {
-    badgeContainer.style.display = 'none'; // esconde container
-    badgeContainer.style.opacity = '0.5';
-    badgeContainer.style.pointerEvents = 'none'; // desabilita clique
-  }
-}
-
-// Atualiza a exibição do arquivo e o estado dos controles
-function updateFileDisplay(file) {
-  const isValid = acceptedTypes.includes(file.type);
-
-  fileInfo.style.display = 'flex';
-  fileNameSpan.textContent = file.name.length > 30 ? file.name.slice(0, 27) + '...' : file.name;
-  fileNameSpan.title = file.name;
-
-  fileInfo.className = 'file-info ' + (isValid ? 'valid' : 'invalid');
-  fileError.style.display = isValid ? 'none' : 'block';
-  fileError.textContent = isValid ? '' : 'Formatos aceitos: mp3, m4a, wav';
-
-  uploadBtn.disabled = !isValid;
-  uploadBtn.classList.toggle('disabled', !isValid);
-  uploadBtn.textContent = isValid ? 'Analisar Áudio' : 'Analisar Áudio';
-
-  summarizeSwitch.disabled = !isValid;
-  if (removeFileBtn) removeFileBtn.disabled = false; // pode remover arquivo independente da validade
-
-  resetBadges();
-
-  // Mostrar badges somente se arquivo válido
-  setBadgeContainerEnabled(isValid);
-}
-
-// Remove o arquivo e reseta a interface para estado inicial
-function removeFile() {
-  fileUpload.value = '';
-  fileInfo.style.display = 'none';
-  fileError.style.display = 'none';
-
-  uploadBtn.disabled = true;           // desabilita botão
-  uploadBtn.classList.add('disabled'); // aplica classe visual de botão inativo
-  uploadBtn.classList.remove('cancel'); // garante que não tenha classe de cancelar
-  uploadBtn.textContent = 'Analisar Áudio'; // texto padrão
-
-    summarizeSwitch.checked = false;
-  summarizeSwitch.disabled = true;
-  if (removeFileBtn) removeFileBtn.disabled = true;
-
-  fileNameSpan.textContent = '';
-  fileInfo.className = 'file-info';
-
-  resetUploadButton(false);
-
-  resetBadges();
-  setBadgeContainerEnabled(false);
-}
-
-// Mostra ou oculta o loader no botão de remover arquivo
-function showRemoveLoader(show) {
-  if (!removeFileBtn) return;
-
-  if (show) {
-    removeFileBtn.innerHTML = '<div class="loader-file"></div>';
-    fileInfo.className = 'file-info processing';
-    removeFileBtn.style.cursor = 'default';
-  } else {
-    removeFileBtn.innerHTML = '<span class="material-icons">close</span>';
-    removeFileBtn.style.cursor = 'pointer';
-  }
-}
-
-// Reseta o botão de upload para estado inicial
-function resetUploadButton(enableControls = true) {
-  isProcessing = false;
-  loader.style.display = 'none';
-  uploadBtn.disabled = true; // botão desabilitado no reset (igual ao estado inicial)
-  uploadBtn.classList.add('disabled'); // aplicar visual de botão desabilitado
-  uploadBtn.classList.remove('cancel');
-  uploadBtn.textContent = "Analisar Áudio";
-  if (enableControls) {
-    setControlsDisabled(false);
-  }
-  showRemoveLoader(false);
-}
-
-// Toggle da seleção das badges com limite de 3 selecionadas
-function onBadgeClick(event) {
-  if (!event.target.classList.contains('badge')) return;
-
-  const activeBadges = badgeContainer.querySelectorAll('.badge.active');
-  const isActive = event.target.classList.contains('active');
-
-  if (!isActive && activeBadges.length >= 1) {
-    // Limite de 3 badges selecionados
-    return;
-  }
-
-  event.target.classList.toggle('active');
-}
-
-// Eventos
-
-fileUpload.addEventListener('change', () => {
-  if (fileUpload.files.length > 0) {
-    updateFileDisplay(fileUpload.files[0]);
-  }
-});
-
-removeFileBtn?.addEventListener('click', () => {
-  removeFile();
-});
-
-uploadBtn.addEventListener('click', () => {
-  if (isProcessing) {
-    if (currentFetchController) {
-      currentFetchController.abort();
-    }
-    resetUploadButton();
-    return;
-  }
-
-  const file = fileUpload.files[0];
-  const summarize = summarizeSwitch.checked;
-
-  if (!file || !acceptedTypes.includes(file.type)) return;
-
-  isProcessing = true;
-
-  uploadBtn.classList.add('cancel');
-  uploadBtn.classList.remove('disabled');
-  uploadBtn.textContent = "Cancelar";
-
-  setControlsDisabled(true);
-  showRemoveLoader(true);
-
-  loader.style.display = 'inline-block';
-  summaryBox.innerText = '';
-  summaryTitle.innerText = `Processando: ${file.name}`;
-  downloadBtn.disabled = true;
-  copyBtn.disabled = true;
-
-  const formData = new FormData();
-  formData.append('audioFile', file);
-  formData.append('summarize', summarize);
-
-  // Adiciona os badges ativos ao FormData
-  const activeBadges = Array.from(badgeContainer.querySelectorAll('.badge.active')).map(b => b.dataset.badge);
-  activeBadges.forEach(badge => formData.append('badges', badge));
-
-  currentFetchController = new AbortController();
-
-  fetch('http://localhost:8080/idox/process', {
-    method: 'POST',
-    body: formData,
-    signal: currentFetchController.signal
-  })
-    .then(res => res.json())
-    .then(data => {
-      isProcessing = false;
-      fileInfo.className = 'file-info valid';
-      uploadBtn.classList.remove('cancel');
-      uploadBtn.textContent = 'Refazer';
-      uploadBtn.disabled = false;
-      uploadBtn.classList.remove('disabled');
-
-      setControlsDisabled(false);
-      showRemoveLoader(false);
-
-      loader.style.display = 'none';
-      copyBtn.disabled = false;
-      downloadBtn.disabled = false;
-
-      if (data.summarize && data.summary) {
-        summaryBox.innerText = data.summary;
-        summaryTitle.innerText = `Resumo do áudio: ${file.name}`;
-      } else {
-        summaryBox.innerText = '';
-        summaryTitle.innerText = `Transcrição do áudio: ${file.name}`;
-      }
-
-      downloadBtn.onclick = () => {
-        const downloadUrl = `http://localhost:8080${data.textFileLink}`;
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = data.textFileLink.split('/').pop();
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      };
-    })
-    .catch(err => {
-      if (err.name === 'AbortError') {
-        console.log('Upload cancelado.');
-      } else {
-        alert('Erro ao processar o áudio. Tente novamente.');
-      }
-      resetUploadButton();
+    // Eventos de Drag and Drop
+    dropZone.addEventListener('dragover', (event) => {
+        event.preventDefault(); // Impede o comportamento padrão do navegador
+        dropZone.classList.add('dragover'); // Adiciona o efeito visual
     });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover'); // Remove o efeito visual
+    });
+
+    dropZone.addEventListener('drop', (event) => {
+        event.preventDefault(); // Impede o comportamento padrão do navegador
+        dropZone.classList.remove('dragover'); // Remove o efeito visual
+
+        // Obtém o arquivo arrastado
+        const files = event.dataTransfer.files;
+
+        if (files.length > 0) {
+            const file = files[0]; // Pega o primeiro arquivo arrastado
+
+            // Simula o comportamento do input de arquivo
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+
+            // Chama a função para processar o arquivo
+            handleFileUpload({ target: fileInput });
+        }
+    });
+
+    // Função para lidar com o clique no botão "Analisar Áudio"
+    uploadButton.addEventListener('click', () => {
+        console.log("Botão 'Analisar Áudio' clicado."); // Log de depuração
+
+        if (isProcessing) {
+            console.log("Cancelando processamento..."); // Log de depuração
+            resetProcessingState();
+        } else {
+            console.log("Iniciando processamento..."); // Log de depuração
+            startProcessing();
+        }
+    });
+
+    function handleFileUpload(event) {
+        const file = event.target.files[0]; // Obtém o arquivo selecionado
+
+        if (!file) {
+            console.error("Nenhum arquivo encontrado.");
+            return;
+        }
+
+        console.log("Arquivo selecionado:", file.name); // Log para depuração
+
+        // Limpa a lista de erros anteriores
+        errorList.innerHTML = '';
+        errorList.style.display = 'none';
+
+        // Valida o arquivo e obtém os erros
+        const errors = validateFile(file);
+
+        if (errors.length === 0) {
+            // Arquivo válido
+            fileNameElement.textContent = file.name;
+
+            // Mostra a área de informações do arquivo
+            fileInfo.style.display = 'flex';
+
+            // Adiciona a classe 'valid' para estilizar o arquivo válido
+            fileInfo.classList.add('valid');
+            fileInfo.classList.remove('invalid'); // Remove classe de erro, se existir
+
+            // Habilita o botão de upload
+            uploadButton.disabled = false;
+
+            // Esconde a mensagem "Nenhum arquivo carregado"
+            noFileMessage.style.display = 'none';
+        } else {
+            // Arquivo inválido: exibe os erros
+            errors.forEach((error) => {
+                const li = document.createElement('li');
+                li.textContent = error;
+                errorList.appendChild(li);
+            });
+
+            // Mostra a lista de erros
+            errorList.style.display = 'block';
+
+            // Atualiza o nome do arquivo no DOM
+            fileNameElement.textContent = file.name;
+
+            // Mostra a área de informações do arquivo
+            fileInfo.style.display = 'flex';
+
+            // Adiciona a classe 'invalid' para estilizar o erro
+            fileInfo.classList.add('invalid');
+            fileInfo.classList.remove('valid'); // Remove classe de sucesso, se existir
+
+            // Desabilita o botão de upload
+            uploadButton.disabled = true;
+
+            // Esconde a mensagem "Nenhum arquivo carregado"
+            noFileMessage.style.display = 'none';
+        }
+    }
+
+    function removeFile() {
+        // Remove o arquivo e limpa o input
+        resetFileInput();
+
+        // Esconde a área de informações do arquivo
+        fileInfo.style.display = 'none';
+
+        // Remove as classes 'valid' e 'invalid'
+        fileInfo.classList.remove('valid', 'invalid');
+
+        // Desabilita o botão de upload
+        uploadButton.disabled = true;
+
+        // Exibe a mensagem "Nenhum arquivo carregado"
+        noFileMessage.style.display = 'block';
+    }
+
+    function validateFile(file) {
+        const errors = [];
+        const allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/mp3'];
+        const allowedExtensions = ['mp3', 'wav', 'm4a'];
+        const maxSize = 5 * 1024 * 1024; // tamanho máximo 5 mb
+
+        // Verifica o tipo do arquivo
+        if (!allowedTypes.includes(file.type)) {
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            if (!allowedExtensions.includes(fileExtension)) {
+                errors.push(`Formatos aceitos: mp3, m4a e wav.`);
+            }
+        }
+
+        // Verifica o tamanho do arquivo
+        if (file.size > maxSize) {
+            errors.push(`Tamanho máximo permitido: 5 MB`);
+        }
+
+        return errors;
+    }
+
+    function resetFileInput() {
+        // Limpa o input de arquivo
+        fileInput.value = '';
+
+        // Limpa a lista de erros
+        errorList.innerHTML = '';
+        errorList.style.display = 'none';
+
+        // Exibe a mensagem "Nenhum arquivo carregado"
+        noFileMessage.style.display = 'block';
+    }
+
+    function startProcessing() {
+        console.log("Iniciando processamento..."); // Log de depuração
+
+        // Verifica se há um arquivo válido
+        if (!fileInfo.classList.contains('valid')) {
+            alert("Por favor, carregue um arquivo válido antes de iniciar a análise.");
+            console.error("Nenhum arquivo válido encontrado."); // Log de depuração
+            return;
+        }
+
+        // Desabilita o botão de upload
+        dropZone.classList.add('disabled');
+        fileInput.disabled = true;
+
+        // Altera o estado do arquivo
+        fileInfo.classList.remove('valid');
+        fileInfo.classList.add('processing');
+        removeButton.disabled = true;
+        removeButton.innerHTML = '<span class="material-icons">autorenew</span>'; // Substitui pelo spinner
+
+        // Desabilita o switch
+        toggleSwitch.disabled = true;
+
+        // Altera o botão de "Analisar Áudio" para "Cancelar"
+        uploadButton.textContent = 'Cancelar';
+        uploadButton.classList.add('cancel');
+
+        // Mostra o loader ao lado do título
+        loaderTitle.style.display = 'inline-block';
+
+        // Mostra a mensagem de processamento
+        summaryContent.innerHTML = '<em style="color: #a0aec0;">Processando...</em>';
+
+        // Altera o botão de download
+        downloadText.textContent = 'Aguardando transcrição';
+        downloadIcon.style.display = 'inline-block';
+        downloadIcon.classList.add('loader-file');
+
+        // Define o estado de processamento
+        isProcessing = true;
+    }
+
+    function resetProcessingState() {
+        console.log("Resetando estado de processamento..."); // Log de depuração
+
+        // Habilita o botão de upload
+        dropZone.classList.remove('disabled');
+        fileInput.disabled = false;
+
+        // Restaura o estado do arquivo
+        fileInfo.classList.remove('processing');
+        fileInfo.classList.add('valid');
+        removeButton.disabled = false;
+        removeButton.innerHTML = '<span class="material-icons">close</span>'; // Restaura o ícone de remoção
+
+        // Habilita o switch
+        toggleSwitch.disabled = false;
+
+        // Restaura o botão de "Analisar Áudio"
+        uploadButton.textContent = 'Analisar Áudio';
+        uploadButton.classList.remove('cancel');
+
+        // Esconde o loader ao lado do título
+        loaderTitle.style.display = 'none';
+
+        // Limpa a caixa de resumo
+        summaryContent.innerHTML = '';
+
+        // Restaura o botão de download
+        downloadText.textContent = 'Baixar Transcrição em TXT';
+        downloadIcon.style.display = 'none';
+        downloadIcon.classList.remove('loader-file');
+
+        // Define o estado de processamento
+        isProcessing = false;
+    }
 });
-
-copyBtn.addEventListener('click', () => {
-  const text = summaryBox.innerText.trim();
-  if (!text) return;
-
-  navigator.clipboard.writeText(text).then(() => {
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3000);
-  });
-});
-
-function toggleAboutCard() {
-  const card = document.getElementById('about-card');
-  card.style.display = card.style.display === 'block' ? 'none' : 'block';
-}
-
-document.addEventListener('click', function (event) {
-  const card = document.getElementById('about-card');
-  const button = document.querySelector('.about-button');
-
-  if (card.style.display === 'block' && !card.contains(event.target) && !button.contains(event.target)) {
-    card.style.display = 'none';
-  }
-});
-
-
-// Drag & Drop
-
-const dropZone = document.getElementById('drop-zone');
-
-dropZone.addEventListener('dragover', event => {
-  event.preventDefault();
-  dropZone.classList.add('dragover');
-});
-
-dropZone.addEventListener('dragleave', event => {
-  dropZone.classList.remove('dragover');
-});
-
-dropZone.addEventListener('drop', event => {
-  dropZone.classList.remove('dragover');
-  handleDrop(event);
-});
-
-function handleDrop(event) {
-  event.preventDefault();
-  const droppedFile = event.dataTransfer.files[0];
-  if (droppedFile) {
-    fileUpload.files = event.dataTransfer.files;
-    updateFileDisplay(droppedFile);
-  }
-}
-
-// Badge click toggle
-
-badgeContainer.querySelectorAll('.badge').forEach(badge => {
-  badge.addEventListener('click', onBadgeClick);
-});
-

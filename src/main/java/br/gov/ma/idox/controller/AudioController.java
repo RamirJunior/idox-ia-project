@@ -3,9 +3,7 @@ package br.gov.ma.idox.controller;
 
 import br.gov.ma.idox.dto.TaskIdResponse;
 import br.gov.ma.idox.dto.TaskStatusResponse;
-import br.gov.ma.idox.service.SummarizationService;
 import br.gov.ma.idox.service.TaskService;
-import br.gov.ma.idox.service.TranscriptionService;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +20,6 @@ public class AudioController {
 
     @Autowired
     private TaskService taskService;
-    private final TranscriptionService transcriptionService;
-    private final SummarizationService summarizationService;
 
     @GetMapping("/index")
     public String openIndex() {
@@ -34,9 +30,7 @@ public class AudioController {
     public ResponseEntity<TaskIdResponse> transcribe(
             @NotNull @RequestParam("audioFile") MultipartFile audioFile,
             @RequestParam("summarize") Boolean summarize) throws Exception {
-
         var taskIdResponse = taskService.startTask(audioFile, summarize);
-
         return ResponseEntity.status(HttpStatus.OK).body(taskIdResponse);
     }
 
@@ -73,6 +67,6 @@ public class AudioController {
         if (status == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(status);
+        return ResponseEntity.status(HttpStatus.OK).body(status);
     }
 }
