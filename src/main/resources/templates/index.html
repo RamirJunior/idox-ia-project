@@ -3,116 +3,577 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="/images/idox-fav.ico" type="image/x-icon">
-    <title>iDox</title>
-    <!-- Fontes e Ícones -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=folder_open"/>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
-    <!-- Folha de Estilo -->
-    <link rel="stylesheet" href="/css/style.css">
+    <title>AudioAI - Análise Inteligente de Áudio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --accent: #4cc9f0;
+            --light: #f8f9fa;
+            --dark: #2b2d42;
+            --success: #4ade80;
+            --text: #2b2d42;
+            --text-light: #6c757d;
+            --card-bg: #ffffff;
+            --shadow: rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7ec 100%);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            background: var(--card-bg);
+            border-radius: 18px;
+            box-shadow: 0 10px 30px var(--shadow);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-weight: 600;
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-weight: 300;
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 25px;
+        }
+
+        .steps {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0 15px;
+            position: relative;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step:not(:last-child):after {
+            content: '';
+            position: absolute;
+            top: 28px;
+            right: -15px;
+            width: 30px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .step-icon {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 20px;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .step.active .step-icon {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .step-text {
+            font-size: 14px;
+            text-align: center;
+            font-weight: 400;
+        }
+
+        .content {
+            display: flex;
+            padding: 30px;
+        }
+
+        .left-column, .right-column {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .left-column {
+            border-right: 1px solid #e9ecef;
+        }
+
+        .panel {
+            background: var(--card-bg);
+            border-radius: 14px;
+            padding: 25px;
+            box-shadow: 0 5px 15px var(--shadow);
+            height: 100%;
+            border: 1px solid #f1f3f5;
+        }
+
+        h2 {
+            color: var(--primary);
+            margin-bottom: 22px;
+            font-weight: 600;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+        }
+
+        h2 i {
+            margin-right: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 25px;
+            background: #fafbfc;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: #f8f9fa;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        .upload-text {
+            color: var(--text-light);
+            margin-bottom: 15px;
+        }
+
+        .upload-text p:first-child {
+            color: var(--text);
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn-analyze {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 25px;
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+        }
+
+        .btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(67, 97, 238, 0.4);
+        }
+
+        .btn-analyze:active {
+            transform: translateY(0);
+        }
+
+        .btn-analyze i {
+            margin-right: 10px;
+        }
+
+        .result-area {
+            background: #fafbfc;
+            border-radius: 12px;
+            padding: 20px;
+            height: 350px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .result-area::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .result-area::-webkit-scrollbar-track {
+            background: #f1f3f5;
+            border-radius: 4px;
+        }
+
+        .result-area::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        .transcribed-text {
+            color: var(--text);
+        }
+
+        .placeholder {
+            color: var(--text-light);
+            text-align: center;
+            margin-top: 140px;
+            font-style: italic;
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 14px;
+            background: #f0f4ff;
+            border-radius: 10px;
+            font-size: 14px;
+            display: none;
+            border-left: 4px solid var(--primary);
+            color: var(--text);
+        }
+
+        .file-info i {
+            margin-right: 10px;
+            color: var(--primary);
+        }
+
+        .ai-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--accent) 0%, #3a86ff 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+
+        .processing-animation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 40px;
+            margin: 20px 0;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            background: var(--primary);
+            border-radius: 50%;
+            margin: 0 5px;
+            animation: bounce 1.5s infinite ease-in-out;
+        }
+
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .feature-list {
+            margin-top: 20px;
+            padding-left: 20px;
+        }
+
+        .feature-list li {
+            margin-bottom: 10px;
+            color: var(--text-light);
+        }
+
+        @media (max-width: 900px) {
+            .content {
+                flex-direction: column;
+            }
+
+            .left-column {
+                border-right: none;
+                border-bottom: 1px solid #e9ecef;
+            }
+
+            .steps {
+                flex-wrap: wrap;
+            }
+
+            .step {
+                width: 50%;
+                margin-bottom: 20px;
+            }
+
+            .step:not(:last-child):after {
+                display: none;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .step {
+                width: 100%;
+            }
+
+            .step-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 18px;
+            }
+
+            header {
+                padding: 20px 15px;
+            }
+
+            .content {
+                padding: 20px 15px;
+            }
+
+            .left-column, .right-column {
+                padding: 15px 0;
+            }
+
+            .panel {
+                padding: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
-<!-- Logo Antigo -->
-<div class="old-logo-wrapper">
-    <img src="/images/idox-logotipo1.webp" title="iDox - PGE" class="old-logo-img" />
-</div>
-
-<!-- Container Principal -->
 <div class="container">
-    <!-- Painel Esquerdo -->
-    <div class="left-panel" ondragover="event.preventDefault()" ondrop="handleDrop(event)">
-        <!-- Área de Upload -->
-        <div class="header-upload-wrapper">
-            <label for="file-upload" class="upload-box-small" id="drop-zone"
-                   title="Clique para selecionar ou arraste um arquivo">
-                <span class="material-symbols-outlined">folder_open</span>
-                <span class="upload-text">Selecionar/Arrastar Áudio</span>
-                <input type="file" id="file-upload" style="display: none;" />
-            </label>
-        </div>
+    <header>
+        <div class="header-content">
+            <h1>AudioAI <span class="ai-badge">Tecnologia IA</span></h1>
+            <div class="subtitle">Converta áudio em texto com precisão usando inteligência artificial</div>
 
-        <!-- Mensagem de "Nenhum arquivo carregado" -->
-        <div id="no-file-message" class="no-file-message">-Nenhum arquivo carregado-</div>
-
-        <!-- Informações do Arquivo -->
-        <div id="file-info" class="file-info" style="display: none;">
-            <span class="material-icons">insert_drive_file</span>
-            <span id="file-name">audio_file_name</span>
-            <button class="remove-btn" onclick="removeFile()">
-                <span id="remove-icon" class="material-icons">close</span>
-            </button>
-        </div>
-
-        <!-- Lista de Erros -->
-        <ul id="error-list" class="error-list" style="display: none;"></ul>
-
-        <!-- Mensagem de Erro -->
-        <div id="file-error" class="file-error"></div>
-
-        <!-- Botões Inferiores -->
-        <div class="bottom-btn">
-            <div class="switch-wrapper">
-                <label class="switch-label">
-                    <input type="checkbox" id="use-ai-switch" class="switch-input">
-                    <span class="switch-slider"></span>Criar resumo/impressões com IA
-                </label>
-            </div>
-            <button id="upload-btn" class="upload-button" disabled>
-                Analisar Áudio
-            </button>
-        </div>
-    </div>
-
-    <!-- Painel Direito -->
-    <div class="right-panel">
-        <!-- Botão de Informações -->
-        <div class="about-button-wrapper">
-            <button class="about-button" onclick="toggleAboutCard()">
-                <span class="material-icons">info</span>
-            </button>
-            <div id="about-card" class="about-card">
-                <strong>iDox</strong> v1.0.0<br>
-                Saiba mais: <a href="https://github.com/RamirJunior/idox-ia-project" target="_blank">iDox</a>
-                <hr>
-                <strong>Llama Meta</strong> v3.1<br>
-                Saiba mais: <a href="https://github.com/ollama/ollama" target="_blank">Ollama</a><br>
-                <hr>
-                <strong>Whisper Open AI</strong> v1.6.2<br>
-                Saiba mais: <a href="https://github.com/openai/whisper" target="_blank">Whisper</a><br>
+            <div class="steps">
+                <div class="step active">
+                    <div class="step-icon">
+                        <i class="fas fa-upload"></i>
+                    </div>
+                    <div class="step-text">Enviar Áudio</div>
+                </div>
+                <div class="step">
+                    <div class="step-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <div class="step-text">Processar</div>
+                </div>
+                <div class="step">
+                    <div class="step-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="step-text">Analisar</div>
+                </div>
+                <div class="step">
+                    <div class="step-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="step-text">Resultado</div>
+                </div>
             </div>
         </div>
+    </header>
 
-        <!-- Título com Loader -->
-        <div class="title-row">
-            <div id="loader-title" class="loader" style="display: none;"></div>
-            <h3 id="summary-title">Resumo do áudio</h3>
+    <div class="content">
+        <div class="left-column">
+            <div class="panel">
+                <h2><i class="fas fa-file-audio"></i> Carregar Arquivo de Áudio</h2>
+
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="upload-text">
+                        <p>Clique ou arraste para enviar seu arquivo</p>
+                        <p>Formatos suportados: MP3, WAV, M4A</p>
+                    </div>
+
+                    <div class="processing-animation">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+
+                    <input type="file" id="fileInput" class="file-input" accept="audio/*">
+                </div>
+
+                <div class="file-info" id="fileInfo">
+                    <i class="fas fa-file-audio"></i>
+                    <span id="fileName">Nenhum arquivo selecionado</span>
+                </div>
+
+                <button class="btn-analyze" id="analyzeButton">
+                    <i class="fas fa-play-circle"></i> Iniciar Análise
+                </button>
+
+                <ul class="feature-list">
+                    <li><i class="fas fa-check-circle" style="color: var(--success);"></i> Reconhecimento de voz preciso</li>
+                    <li><i class="fas fa-check-circle" style="color: var(--success);"></i> Suporte a múltiplos idiomas</li>
+                    <li><i class="fas fa-check-circle" style="color: var(--success);"></i> Processamento 100% seguro</li>
+                </ul>
+            </div>
         </div>
 
-        <!-- Caixa de Resumo -->
-        <div class="summary-box" id="summary-box">
-            <div id="summary-content"></div>
-        </div>
+        <div class="right-column">
+            <div class="panel">
+                <h2><i class="fas fa-align-left"></i> Transcrição do Áudio</h2>
 
-        <!-- Botão de Download -->
-        <div class="button-row">
-            <button id="download-btn" class="action-button download-btn" disabled>
-                <span id="download-icon" class="material-icons">text_snippet</span>
-                <span id="download-text">Baixar Transcrição em TXT</span>
-            </button>
+                <div class="result-area">
+                    <div class="transcribed-text">
+                        <p class="placeholder">
+                            Sua transcrição aparecerá aqui após o processamento...
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Toast -->
-<div id="toast" class="toast">Texto Copiado</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const analyzeButton = document.getElementById('analyzeButton');
 
-<!-- Script -->
-<script src="/js/script.js"></script>
+        // Upload de arquivo
+        uploadArea.addEventListener('click', function() {
+            fileInput.click();
+        });
 
-<!-- Rodapé -->
-<footer class="footer-note">
-    Whisper e Ollama podem cometer erros. Revise as informações ao copiar/baixar dados gerados.
-</footer>
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--primary)';
+            uploadArea.style.backgroundColor = '#f0f4ff';
+        });
+
+        uploadArea.addEventListener('dragleave', function() {
+            uploadArea.style.borderColor = '#dee2e6';
+            uploadArea.style.backgroundColor = '#fafbfc';
+        });
+
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#dee2e6';
+            uploadArea.style.backgroundColor = '#fafbfc';
+
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelection(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files.length) {
+                handleFileSelection(fileInput.files[0]);
+            }
+        });
+
+        function handleFileSelection(file) {
+            fileName.textContent = file.name;
+            fileInfo.style.display = 'block';
+
+            // Efeito visual de confirmação
+            uploadArea.style.borderColor = 'var(--success)';
+            uploadArea.style.backgroundColor = '#f0fff4';
+
+            setTimeout(() => {
+                uploadArea.style.borderColor = '#dee2e6';
+                uploadArea.style.backgroundColor = '#fafbfc';
+            }, 1000);
+        }
+
+        // Simulação de análise
+        analyzeButton.addEventListener('click', function() {
+            if (!fileInput.files.length) {
+                alert('Por favor, selecione um arquivo de áudio primeiro.');
+                return;
+            }
+
+            // Simular processamento
+            analyzeButton.disabled = true;
+            analyzeButton.innerHTML = '<i class="fas fa-cog fa-spin"></i> Processando...';
+
+            // Atualizar steps visualmente
+            const steps = document.querySelectorAll('.step');
+            steps.forEach(step => step.classList.remove('active'));
+
+            let currentStep = 0;
+            const processSteps = setInterval(() => {
+                steps[currentStep].classList.add('active');
+                currentStep++;
+
+                if (currentStep >= steps.length) {
+                    clearInterval(processSteps);
+
+                    // Mostrar texto simulado
+                    document.querySelector('.transcribed-text').innerHTML = `
+                        <p><strong>Arquivo:</strong> ${fileInput.files[0].name}</p>
+                        <p><strong>Duração:</strong> 02:45</p>
+                        <p><strong>Confiança da transcrição:</strong> 94%</p>
+                        <p><strong>Transcrição:</strong></p>
+                        <p>Olá, esta é uma demonstração da tecnologia de transcrição de áudio. O sistema processou seu arquivo utilizando algoritmos de inteligência artificial e converteu o conteúdo de áudio em texto.</p>
+                        <p>Esta interface foi projetada para ser amigável e acessível para pessoas de todas as idades, mantendo ao mesmo tempo a sensação de tecnologia avançada.</p>
+                        <p>Os resultados podem ser copiados para a área de transferência ou exportados para um documento de texto.</p>
+                    `;
+
+                    // Restaurar botão
+                    setTimeout(() => {
+                        analyzeButton.disabled = false;
+                        analyzeButton.innerHTML = '<i class="fas fa-play-circle"></i> Iniciar Análise';
+                    }, 1000);
+                }
+            }, 800);
+        });
+    });
+</script>
 </body>
 </html>
