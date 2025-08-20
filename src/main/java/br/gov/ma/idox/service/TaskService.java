@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -17,9 +19,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TaskService {
 
     private final TranscriptionService transcriptionService;
+    private final FileService fileService;
     private final Map<String, TaskStatusResponse> tasksList = new ConcurrentHashMap<>();
 
-    public TaskIdResponse startTask(MultipartFile audioFile, Boolean summarize) {
+    public TaskIdResponse startTask(MultipartFile audioFile, Boolean summarize) throws IOException {
         String taskId = UUID.randomUUID().toString();
         TaskStatusResponse status = new TaskStatusResponse();
         status.setTaskId(taskId);
@@ -27,7 +30,8 @@ public class TaskService {
         status.setSituation("Arquivo recebido");
         tasksList.put(taskId, status);
 
-        CompletableFuture.runAsync(() -> transcriptionService.transcribe(this, audioFile, summarize, taskId));
+        File audio = fileService.saveMultipartFile(this, audioFile, taskId);
+        CompletableFuture.runAsync(() -> transcriptionService.transcribe(this, audio, summarize, taskId));
         return new TaskIdResponse(taskId);
     }
 
@@ -54,7 +58,7 @@ public class TaskService {
     }
 
     public TaskStatusResponse cancelTask(String taskId) throws TaskCancellationException {
-        boolean canceled = transcriptionService.cancelProcess(this, taskId);
+        boolean canceled = transcriptionService.cancelProcess(taskId);
         if (canceled) {
             TaskStatusResponse taskStatus = tasksList.get(taskId);
             taskStatus.setStatus("CANCELADO");
@@ -64,6 +68,7 @@ public class TaskService {
         throw new TaskCancellationException("Falha ao cancelar tarefa.");
     }
 
+    // TODO: criar serviço de limpeza pra tasklist
     public boolean deleteTask(String taskId) {
         tasksList.remove(taskId);
         return !tasksList.containsKey(taskId);

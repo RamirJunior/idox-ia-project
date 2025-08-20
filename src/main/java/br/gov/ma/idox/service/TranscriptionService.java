@@ -7,7 +7,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -16,7 +15,6 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -32,15 +30,14 @@ public class TranscriptionService {
     private static final int CODE_REQUESTED_BY_USER = 143;
 
     @Async
-    public CompletableFuture<TranscriptionResponse> transcribe(TaskService taskService, MultipartFile audioFile, boolean summarize, String taskId) {
+    public CompletableFuture<TranscriptionResponse> transcribe(TaskService taskService, File audioFile, boolean summarize, String taskId) {
 
         try {
             taskService.updateStatus(taskId, "AGUARDANDO", "iDox está salvando arquivo.");
             ensureUploadDirectoryExists(uploadService.getUploadDir());
-            File savedFile = saveFile(audioFile);
 
             taskService.updateStatus(taskId, "PROCESSANDO", "Analisando áudio com Whisper.");
-            Process process = startWhisperProcess(savedFile);
+            Process process = startWhisperProcess(audioFile);
             processMap.put(taskId, process);
 
             log.info("Iniciando tarefa com taskId: {}", taskId);
@@ -49,7 +46,7 @@ public class TranscriptionService {
             int exitCode = process.waitFor();
             processMap.remove(taskId);
 
-            if (exitCode == CODE_REQUESTED_BY_USER){
+            if (exitCode == CODE_REQUESTED_BY_USER) {
                 taskService.updateStatus(taskId, "CANCELADO", "Processo cancelado pelo usuário");
                 throw new ProcessInterruptedByUserException("Processo cancelado pelo usuário.");
             }
@@ -60,7 +57,7 @@ public class TranscriptionService {
             }
 
             taskService.updateStatus(taskId, "PROCESSANDO", "Gerando arquivo de texto transcrito.");
-            TranscriptionResponse response = buildResponse(taskService, savedFile.toPath(), summarize, taskId);
+            TranscriptionResponse response = buildResponse(taskService, audioFile.toPath(), summarize, taskId);
             return CompletableFuture.completedFuture(response);
 
         } catch (Exception e) {
@@ -69,7 +66,7 @@ public class TranscriptionService {
         }
     }
 
-    public boolean cancelProcess(TaskService taskService, String taskId) {
+    public boolean cancelProcess(String taskId) {
         Process process = processMap.get(taskId);
         if (process != null && process.isAlive()) {
             process.destroy();
@@ -78,14 +75,6 @@ public class TranscriptionService {
             return true;
         }
         return false;
-    }
-
-    private File saveFile(MultipartFile audioFile) throws IOException {
-        String fileName = generateUniqueFileName(audioFile.getOriginalFilename());
-        Path path = Paths.get(uploadService.getUploadDir(), fileName);
-        audioFile.transferTo(path.toFile());
-        log.info("Arquivo salvo em: {}", path);
-        return path.toFile();
     }
 
     private Process startWhisperProcess(File file) throws IOException {
@@ -146,11 +135,5 @@ public class TranscriptionService {
                 "-of", file.getAbsolutePath().replace(".wav", ""),
                 "-otxt"
         );
-    }
-
-    private static String generateUniqueFileName(String originalFilename) {
-        String baseName = (originalFilename != null) ?
-                originalFilename.replaceAll("\\.[^.]+$", "") : "audio";
-        return baseName + "-" + UUID.randomUUID() + ".wav";
     }
 }
