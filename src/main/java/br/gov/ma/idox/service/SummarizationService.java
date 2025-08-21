@@ -87,13 +87,15 @@ public class SummarizationService {
         return null;
     }
 
-    private ProcessBuilder runLlamaCommand(File tempPrompt, String llamaBinPath, String llamaModelPath) {
+    private ProcessBuilder runLlamaCommand(File tempPrompt, String llamaClient, String llamaModelPath) {
         ProcessBuilder builder = new ProcessBuilder(
-                llamaBinPath,
+                llamaClient,
                 "-m", llamaModelPath,
                 "-f", tempPrompt.getAbsolutePath(),
+                "--temp", "0.2",
                 "--no-conversation",
-                "--ctx-size", "8192"
+                "--ctx-size", "8192",
+                "--repeat_penalty", "1.1"
         );
         return builder;
     }
