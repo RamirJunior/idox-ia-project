@@ -41,11 +41,11 @@ function renderChips({ formatOk, sizeOk }) {
 
   const chipFormat = document.createElement('div');
   chipFormat.className = `chip ${formatOk ? 'ok' : 'bad'}`;
-  chipFormat.innerHTML = `${formatOk ? '✔' : '✕'} Formato (${ACCEPT_EXT.join(', ')})`;
+  chipFormat.innerHTML = `${formatOk ? '✔' : '✕'} Formato: mp3, m4a ou wav`;
 
   const chipSize = document.createElement('div');
   chipSize.className = `chip ${sizeOk ? 'ok' : 'bad'}`;
-  chipSize.innerHTML = `${sizeOk ? '✔' : '✕'} Tamanho (≤ 5 MB)`;
+  chipSize.innerHTML = `${sizeOk ? '✔' : '✕'} Tamanho até 5 MB`;
 
   validationChips.appendChild(chipFormat);
   validationChips.appendChild(chipSize);
@@ -63,7 +63,7 @@ function resetUI() {
   fileRow.style.display = 'none';
   validationChips.style.display = 'none';
   progress.style.width = '0%';
-  summary.value = '';
+  summary.textContent = '';
   downloadBtn.disabled = true;
   downloadBtn.classList.add('btn-disabled');
   downloadBtn.classList.remove('btn-primary');
@@ -77,7 +77,7 @@ selectBtn.addEventListener('click', (e) => {
 });
 
 // Clicar na área abre o seletor (menos quando o clique vem de elementos internos com stopPropagation)
-uploadArea.addEventListener('click', () => fileInput.click());
+// uploadArea.addEventListener('click', () => fileInput.click());
 
 fileInput.addEventListener('change', handleFile);
 
@@ -140,7 +140,7 @@ startBtn.addEventListener('click', async (e) => {
     else if(data.status === 'CONCLUIDO') {
       if(summarizeSwitch.checked) document.getElementById('concluidoStep').style.display = 'flex';
       setActiveStep(summarizeSwitch.checked ? 4 : 3);
-      summary.value = data.summary || '';
+      summary.textContent = data.summary || '';
       downloadBtn.disabled = false;
       downloadBtn.classList.remove('btn-disabled');
       downloadBtn.classList.add('btn-primary');
@@ -155,8 +155,8 @@ function setActiveStep(index){
 }
 
 downloadBtn.addEventListener('click', () => {
-  if (!summary.value) return;
-  const blob = new Blob([summary.value], { type: 'text/plain;charset=utf-8' });
+  if (!summary.textContent) return;
+  const blob = new Blob([summary.textContent], { type: 'text/plain;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = (currentFile?.name?.replace(/\.[^.]+$/, '') || 'transcricao') + '.txt';

@@ -19,7 +19,6 @@
     <div class="content">
         <div class="upload-area" id="uploadArea">
             <strong>Selecione ou arraste o áudio</strong>
-            <span class="hint">Formatos aceitos: WAV, MP3, M4A · até 5 MB</span>
             <button class="btn-primary" id="selectBtn" type="button">Selecionar Áudio</button>
             <input type="file" id="fileInput" style="display:none;" accept="audio/wav, audio/mpeg, audio/mp4, audio/x-m4a" />
 
@@ -35,9 +34,11 @@
 
             <div class="progress-bar"><div class="progress" id="progress"></div></div>
 
-            <!-- Switch para gerar resumo -->
             <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:10px;">
-                <input type="checkbox" id="summarizeSwitch" checked>
+                <label class="switch">
+                    <input type="checkbox" id="summarizeSwitch" checked>
+                    <span class="slider"></span>
+                </label>
                 <label for="summarizeSwitch">Gerar Impressões/Resumo com IA</label>
             </div>
 
@@ -48,7 +49,7 @@
 
         <div class="summary-area">
             <strong>Resumo do áudio</strong>
-            <textarea id="summary" placeholder="Aqui aparecerá o resumo..."></textarea>
+            <div id="summary" class="summary-output">Aqui aparecerá o resumo...</div>
             <button class="btn-disabled" id="downloadBtn" type="button" disabled>Baixar Transcrição</button>
         </div>
     </div>
