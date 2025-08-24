@@ -22,7 +22,7 @@ public class SummarizationService {
     @Async
     public CompletableFuture<String> summarizeFile(TaskService taskService, File transcriptionTextFile, String taskId) {
         try {
-            taskService.updateStatus(taskId, "PROCESSANDO", "Iniciando sumarização com Llama.");
+            taskService.updateStatus(taskId, "PROCESSANDO", ".:: Iniciando sumarização com Llama...");
             StringBuilder transcriptionText = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(new FileReader(transcriptionTextFile))) {
                 String line;
@@ -41,7 +41,7 @@ public class SummarizationService {
             builder.redirectErrorStream(true);
             Process process = builder.start();
 
-            taskService.updateStatus(taskId, "PROCESSANDO", "Rodando prompt de análise com Llama.");
+            taskService.updateStatus(taskId, "PROCESSANDO", ".:: Rodando prompt de análise com Llama...");
             StringBuilder rawLlamaResponse = new StringBuilder();
             try (BufferedReader lineReader = new BufferedReader(
                     new InputStreamReader(process.getInputStream()))) {
@@ -75,7 +75,6 @@ public class SummarizationService {
 
                 tempPrompt.delete();
 
-                taskService.updateStatus(taskId, "FINALIZADO", "Sumarização finalizada com sucesso.");
                 taskService.updateSummary(taskId, summaryResponse);
                 return CompletableFuture.completedFuture(summaryResponse.trim());
             }

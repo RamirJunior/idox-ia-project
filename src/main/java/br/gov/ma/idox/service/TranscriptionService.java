@@ -33,10 +33,10 @@ public class TranscriptionService {
     public CompletableFuture<TranscriptionResponse> transcribe(TaskService taskService, File audioFile, boolean summarize, String taskId) {
 
         try {
-            taskService.updateStatus(taskId, "AGUARDANDO", "iDox está salvando arquivo.");
+            taskService.updateStatus(taskId, "AGUARDANDO", ".:: iDox está salvando arquivo...");
             ensureUploadDirectoryExists(uploadService.getUploadDir());
 
-            taskService.updateStatus(taskId, "PROCESSANDO", "Analisando áudio com Whisper.");
+            taskService.updateStatus(taskId, "PROCESSANDO", ".:: Analisando áudio com Whisper...");
             Process process = startWhisperProcess(audioFile);
             processMap.put(taskId, process);
 
@@ -56,8 +56,10 @@ public class TranscriptionService {
                 throw new TranscriptionException("Processo Whisper falhou com código: " + exitCode);
             }
 
-            taskService.updateStatus(taskId, "PROCESSANDO", "Gerando arquivo de texto transcrito.");
+            taskService.updateStatus(taskId, "PROCESSANDO", ".:: Gerando arquivo de texto transcrito...");
             TranscriptionResponse response = buildResponse(taskService, audioFile.toPath(), summarize, taskId);
+
+            taskService.updateStatus(taskId, "FINALIZADO", "Processamento finalizado.");
             return CompletableFuture.completedFuture(response);
 
         } catch (Exception e) {
@@ -103,12 +105,12 @@ public class TranscriptionService {
         taskService.updateLink(taskId, response.getTextFileLink());
 
         if (summarize) {
-            taskService.updateStatus(taskId, "PROCESSANDO", "Iniciando sumarização com Llama.");
+            taskService.updateStatus(taskId, "PROCESSANDO", ".:: Iniciando sumarização com Llama...");
             String summary = summarizationService.summarizeFile(taskService, txtFile, taskId).get();
             response.setSummary(summary);
             log.info("Resumo gerado para a taskId: {}", taskId);
         }
-        response.setSituation("Processamento iDox finalizado.");
+        response.setSituation("Processamento finalizado.");
         response.setStatus("FINALIZADO");
         return response;
     }
