@@ -1,16 +1,19 @@
 :root {
-  --primary: #0ea5e9;
-  --primary-600: #0284c7;
-  --bg: #f8fafc;
+  --primary: #8B1C23;
+  /* Marsala */
+  --primary-600: #70141a;
+  /* Marsala escuro */
+  --bg: #fdfdfd;
+  /* Fundo neutro */
   --text: #1e293b;
   --muted: #475569;
-  --border: #cbd5e1;
-  --chip-ok: #10b981;
-  /* green */
-  --chip-bad: #ef4444;
-  /* red */
-  --chip-warn: #f59e0b;
-  /* amber */
+  --border: #e2e8f0;
+  --chip-ok: #1e3a8a;
+  /* Azul escuro */
+  --chip-bad: #b91c1c;
+  /* Vermelho forte */
+  --chip-warn: #e5670f;
+  /* Laranja */
   --card: #ffffff;
   --shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
@@ -21,13 +24,29 @@
 
 body {
   font-family: Arial, sans-serif;
-  background: linear-gradient(135deg, #0d9488, #0369a1);
+  background: linear-gradient(135deg, #8B1C23, #1e3a8a, #FF6600, #0d1b2a);
+  background-size: 600% 600%;
+  animation: gradient-move 60s ease-in-out infinite;
   margin: 0;
   padding: 0;
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+}
+
+@keyframes gradient-move {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .container {
@@ -76,13 +95,18 @@ body {
   color: #fff
 }
 
+.completed .circle {
+  background: #e5670f !important;
+  /* Verde para steps concluídos */
+  color: #fff;
+}
+
 .content {
   display: flex;
   gap: 20px;
   flex-wrap: wrap
 }
 
-/* Alturas fixas nos dois cards */
 .upload-area,
 .summary-area {
   height: 440px;
@@ -90,9 +114,9 @@ body {
 }
 
 .upload-area {
-    width: 380px;
-    min-width: 220px;
-    flex: 0 0 auto;
+  width: 380px;
+  min-width: 220px;
+  flex: 0 0 auto;
   background: var(--card);
   border: 2px dashed #94a3b8;
   border-radius: 12px;
@@ -108,13 +132,15 @@ body {
 
 .upload-area:hover {
   border-color: var(--primary);
-  background: #f0f9ff;
+  background: #fff1f2;
+  /* Fundo suave marsala */
   cursor: default;
 }
 
 .upload-area.dragover {
   border-color: var(--primary);
-  background: #e0f2fe;
+  background: #fde7e9;
+  /* Marsala bem suave */
   transform: scale(1.01);
 }
 
@@ -143,7 +169,6 @@ body {
 
 textarea {
   width: 100%;
-  /* altura passa a ser flexível no card fixo */
   flex: 1;
   min-height: 0;
   border-radius: 8px;
@@ -160,6 +185,10 @@ button {
   cursor: pointer;
   font-weight: bold;
   transition: filter .2s ease, transform .1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 button:active {
@@ -168,11 +197,11 @@ button:active {
 
 .btn-primary {
   background: var(--primary);
-  color: #fff
+  color: #fff;
 }
 
 .btn-primary:hover {
-  filter: brightness(0.95)
+  filter: brightness(0.9);
 }
 
 .btn-disabled {
@@ -268,15 +297,22 @@ button:active {
 }
 
 .chip.ok {
-  background: #ecfdf5;
-  color: #065f46;
-  border-color: #a7f3d0
+  background: #dbeafe;
+  /* Azul claro */
+  color: var(--chip-ok);
+  border-color: #93c5fd;
 }
 
 .chip.bad {
-  background: #fef2f2;
-  color: #991b1b;
-  border-color: #fecaca
+  background: #fee2e2;
+  color: var(--chip-bad);
+  border-color: #fecaca;
+}
+
+.chip.warn {
+  background: #fff7ed;
+  color: var(--chip-warn);
+  border-color: #fed7aa;
 }
 
 .chip.icon {
@@ -295,7 +331,6 @@ button:active {
   }
 }
 
-/* estilo switch iOS */
 .switch {
   position: relative;
   display: inline-block;
@@ -331,15 +366,14 @@ button:active {
   background-color: white;
   transition: 0.3s;
   border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-/* ativo */
-.switch input:checked + .slider {
-  background-color: var(--primary);
+.switch input:checked+.slider {
+  background-color: var(--chip-warn);
 }
 
-.switch input:checked + .slider:before {
+.switch input:checked+.slider:before {
   transform: translateX(15px);
 }
 
@@ -352,39 +386,27 @@ button:active {
   white-space: pre-wrap;
   overflow-y: auto;
   cursor: text;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: left;
 }
 
 .summary-title {
   display: flex;
-  align-items: center;   /* alinha ícone e texto verticalmente */
-  gap: 8px;              /* espaço entre ícone e texto */
-  font-weight: bold;     /* mantém o estilo do <strong> */
-  font-size: 1.1rem;     /* opcional: define tamanho consistente */
+  align-items: center;
+  gap: 8px;
+  font-weight: bold;
+  font-size: 1.1rem;
 }
+
 .summary-title .material-icons {
-  font-size: 22px;       /* deixa o ícone do tamanho da fonte */
+  font-size: 22px;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* Spinner para ícone de processamento */
 .spinner {
   border: 3px solid #f3f3f3;
-  border-top: 3px solid var(--primary);
+  border-top: 3px solid var(--chip-warn);
   border-radius: 50%;
   width: 22px;
   height: 22px;
@@ -392,15 +414,62 @@ button:active {
   display: inline-block;
   vertical-align: middle;
 }
+
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
-/* Botão de cancelar */
 #startBtn.cancel-mode {
-  background-color: #e63946 !important;
+  background-color: var(--chip-bad) !important;
+  /* Vermelho cancelar */
+  cursor: pointer;
+  width: 100%;
 }
+
 #startBtn.cancel-mode:hover {
-  background-color: #d62828 !important;
+  background-color: #7f1d1d !important;
+  /* Vermelho mais escuro no hover */
+}
+
+.disabled-element {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.no-summary-message {
+  font-style: italic;
+  color: var(--muted);
+  text-align: center;
+  padding: 20px;
+}
+
+#fileActions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+#startBtn {
+  width: 100%;
+}
+
+.canceling-state {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.status-message {
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 10px;
+  text-align: center;
+  font-size: 14px;
 }
