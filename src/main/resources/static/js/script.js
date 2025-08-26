@@ -227,7 +227,9 @@ function updateSteps(statusData) {
   steps[0].classList.remove('active');
 
   // Step 2 pintado durante processamento
-  steps[1].classList.add('active');
+  if (statusData.situation?.includes("Whisper")){
+    steps[1].classList.add('active');
+  }
 
   // Step 3 só se tiver Llama e switch ativo
   if (switchEl.checked && statusData.situation?.includes("Llama")) {

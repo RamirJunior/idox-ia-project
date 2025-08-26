@@ -26,7 +26,7 @@ body {
   font-family: Arial, sans-serif;
   background: linear-gradient(135deg, #8B1C23, #1e3a8a, #FF6600, #0d1b2a);
   background-size: 600% 600%;
-  animation: gradient-move 60s ease-in-out infinite;
+  animation: gradient-move 40s ease-in-out infinite;
   margin: 0;
   padding: 0;
   display: flex;
