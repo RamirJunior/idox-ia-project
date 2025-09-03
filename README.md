@@ -39,5 +39,5 @@ A aplicação foi desenvolvida com Java 17 e utiliza o ecossistema Spring Boot, 
 
 ### Observação
 - _Os módulos de IA - Whisper e Llama - foram removidos do repositório para fins de praticidade na documentação._
-- _Serão documentados e anexados em breve bem como Screenshot da aplicação._
+- _A documentação dos binários utilizados pode ser consultada nos links: [Open AI - Whisper](https://github.com/ggml-org/whisper.cpp) e [Llama](https://github.com/ggml-org/llama.cpp)_
 
