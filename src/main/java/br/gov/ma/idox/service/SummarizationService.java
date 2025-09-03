@@ -1,81 +1,107 @@
 package br.gov.ma.idox.service;
 
+import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static br.gov.ma.idox.integration.llama.LlamaConstants.END_PROMPT;
+import static br.gov.ma.idox.integration.llama.LlamaConstants.START_PROMPT;
+
 @Service
+@AllArgsConstructor
 public class SummarizationService {
 
-    private final String LLAMA_PATH = "C:\\Users\\User\\Documents\\projeto\\idox\\llama\\llama.cpp\\build\\bin\\Release\\llama-cli.exe"; // ou seu script wrapper
-    private final String MODEL_LLAMA = "C:\\Users\\User\\Documents\\projeto\\idox\\llama\\llama.cpp\\models\\tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf";
+    private final AiService aiService;
 
     @Async
-    public CompletableFuture<String> summarizeFile(File txtFile) {
+    public CompletableFuture<String> summarizeFile(TaskService taskService, File transcriptionTextFile, String taskId) {
         try {
-            // Lê o conteúdo do arquivo
-            StringBuilder content = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(new FileReader(txtFile))) {
+            taskService.updateStatus(taskId, "PROCESSANDO", ".:: Iniciando sumarização com Llama...");
+            StringBuilder transcriptionText = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new FileReader(transcriptionTextFile))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    content.append(line).append("\n");
+                    transcriptionText.append(line).append("\n");
                 }
             }
 
-            String prompt = "Responda sempre em português do Brasil. Quero saber o(s) assunto(s) principal nesse texto. Sempre que possível use tópicos de forma objetiva:\n\n" + content + "\n\n### RESPOSTA:\n";
+            String mountedPrompt = START_PROMPT + transcriptionText + END_PROMPT;
 
+            File tempPrompt = createTempPromptFile(mountedPrompt);
+            System.out.println("Local do texto de transcrição: " + transcriptionTextFile.getAbsolutePath());
+            System.out.println("Local temporário do Prompt Llama.cpp: " + tempPrompt.getAbsolutePath());
 
-            ProcessBuilder builder = new ProcessBuilder(
-                    LLAMA_PATH,
-                    "-m", MODEL_LLAMA,
-                    "-p", prompt,
-                    "--no-conversation",
-                    "--n-predict", "512"
-            );
-
+            ProcessBuilder builder = runLlamaCommand(tempPrompt, aiService.getLlamaExecutor(), aiService.getLlamaModel());
             builder.redirectErrorStream(true);
             Process process = builder.start();
 
-            StringBuilder rawOutput = new StringBuilder();
-            try (BufferedReader processReader = new BufferedReader(
+            taskService.updateStatus(taskId, "PROCESSANDO", ".:: Rodando prompt de análise com Llama...");
+            StringBuilder rawLlamaResponse = new StringBuilder();
+            try (BufferedReader lineReader = new BufferedReader(
                     new InputStreamReader(process.getInputStream()))) {
 
                 String line;
-                while ((line = processReader.readLine()) != null) {
-                    rawOutput.append(line).append("\n");
+                while ((line = lineReader.readLine()) != null) {
+                    rawLlamaResponse.append(line).append("\n");
                 }
             }
 
             int exitCode = process.waitFor();
             if (exitCode != 0) {
+                taskService.updateStatus(taskId, "FALHA", "Falha durante análise com Llama.");
                 throw new RuntimeException("Erro ao executar LLaMA (exit code " + exitCode + ")");
             }
 
-            String raw = rawOutput.toString();
-            int start = raw.indexOf("### RESPOSTA:");
+            String rawResponse = rawLlamaResponse.toString();
+            int start = rawResponse.indexOf(END_PROMPT);
             if (start >= 0) {
-                String corte = raw.substring(start + "### RESPOSTA:".length());
-                // remove logs extras após a resposta
-                String respostaFinal = Arrays.stream(corte.split("\n"))
+                String sliceRawResponse = rawResponse.substring(start + END_PROMPT.length());
+                String summaryResponse = Arrays.stream(sliceRawResponse.split("\n"))
                         .takeWhile(l -> !l.trim().startsWith("llama_perf_context_print"))
                         .filter(l -> !l.matches(".*(llama|load|sampler|print_info|context|kv_cache|model_loader).*"))
-                        .filter(l -> !l.trim().isEmpty())
+                        .map(l -> l
+                                .replaceAll("^###\\s*RESPOSTA:\\s*", "")
+                                .replaceAll("\\[end of text\\]$", "")
+                                .trim()
+                        )
+                        .filter(l -> !l.isEmpty())
                         .collect(Collectors.joining("\n"));
 
-                return CompletableFuture.completedFuture(respostaFinal.trim());
+                tempPrompt.delete();
+
+                taskService.updateSummary(taskId, summaryResponse);
+                return CompletableFuture.completedFuture(summaryResponse.trim());
             }
 
-
         } catch (Exception e) {
+            taskService.updateStatus(taskId, "FAILED", "Erro ao resumir arquivo");
             throw new RuntimeException("Erro ao resumir arquivo: " + e.getMessage(), e);
         }
         return null;
+    }
+
+    private ProcessBuilder runLlamaCommand(File tempPrompt, String llamaClient, String llamaModelPath) {
+        ProcessBuilder builder = new ProcessBuilder(
+                llamaClient,
+                "-m", llamaModelPath,
+                "-f", tempPrompt.getAbsolutePath(),
+                "--temp", "0.2",
+                "--no-conversation",
+                "--ctx-size", "8192",
+                "--repeat_penalty", "1.1"
+        );
+        return builder;
+    }
+
+    private static File createTempPromptFile(String mountedPrompt) throws IOException {
+        File tempPromptFile = File.createTempFile("prompt_", ".txt");
+        Files.write(tempPromptFile.toPath(), mountedPrompt.getBytes());
+        return tempPromptFile;
     }
 }

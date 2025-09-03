@@ -1,85 +1,88 @@
 <!DOCTYPE html>
-<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<html lang="pt-BR" xmlns:th="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="/images/idox-fav.ico" type="image/x-icon">
-    <title>iDox</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <title>iDOX - Análise de Áudio</title>
 </head>
 <body>
 <div class="container">
-    <div class="left-panel" ondragover="event.preventDefault()" ondrop="handleDrop(event)">
-        <div class="logo-wrapper">
-            <img src="/images/idox-logotipo1.webp" alt="iDox" title="iDox - PGE" class="logo-img" draggable="false" />
+    <div class="steps" id="stepsContainer">
+        <div class="step active">
+            <div class="circle">1</div>
+            Selecionar Áudio
         </div>
-
-        <label for="file-upload" class="upload-box" id="drop-zone">
-            <span class="material-icons">cloud_upload</span><br>
-            Arraste ou selecione um arquivo de áudio
-            <input type="file" id="file-upload" style="display: none;" />
-        </label>
-
-        <div id="file-info" class="file-info" style="display: none;">
-            <span class="material-icons">insert_drive_file</span>
-            <span id="file-name">audio_file_name</span>
-            <button class="remove-btn" onclick="removeFile()">
-                <span class="material-icons">close</span>
-            </button>
+        <div class="step">
+            <div class="circle">2</div>
+            Transcrevendo
         </div>
-
-        <div id="file-error" class="file-error"></div>
-
-        <div class="bottom-btn">
-            <button id="upload-btn" class="upload-button" disabled>
-                Criar Resumo
-            </button>
+        <div class="step" id="resumoStep">
+            <div class="circle">3</div>
+            Gerando Resumo
+        </div>
+        <div class="step" id="concluidoStep">
+            <div class="circle">4</div>
+            Concluído
         </div>
     </div>
 
-    <div class="right-panel">
+    <div class="content">
+        <div class="upload-area" id="uploadArea">
+            <strong>Selecione ou arraste o áudio</strong>
+            <button class="btn-primary" id="selectBtn" type="button">Selecionar Áudio</button>
+            <input type="file" id="fileInput" style="display:none;"
+                   accept="audio/wav, audio/mpeg, audio/mp4, audio/x-m4a"/>
 
-        <div class="about-button-wrapper">
-            <button class="about-button" onclick="toggleAboutCard()">
-                <span class="material-icons">info</span>
-            </button>
-            <div id="about-card" class="about-card">
-                <strong>iDox</strong> v1.0.0<br>
-                Saiba mais: <a href="https://github.com/RamirJunior/aurapro" target="_blank">iDox</a>
-                <hr>
-                <strong>Ollama</strong> v3.1<br>
-                Saiba mais: <a href="https://github.com/ollama/ollama" target="_blank">Ollama</a><br>
-                <hr>
-                <strong>Whisper Open AI</strong> v1.6.2<br>
-                Saiba mais: <a href="https://github.com/openai/whisper" target="_blank">Whisper</a><br>
+            <div id="fileRow" class="file-row" style="display:none">
+                <div class="filename">
+                    <span id="fileName" class="name"></span>
+                    <div class="hint" id="fileMeta"></div>
+                </div>
+                <button id="removeBtn" class="remove-icon" type="button" aria-label="Remover arquivo"
+                        title="Remover arquivo">✕
+                </button>
             </div>
+
+            <div class="chips" id="validationChips" style="display:none"></div>
+
+            <div class="progress-bar">
+                <div class="progress" id="progress"></div>
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:10px;">
+                <label class="switch">
+                    <input type="checkbox" id="summarizeSwitch" checked>
+                    <span class="slider"></span>
+                </label>
+                <label for="summarizeSwitch">Gerar Impressões/Resumo com IA</label>
+            </div>
+
+            <div id="fileActions">
+                <button class="btn-disabled" id="startBtn" type="button" disabled>Iniciar Processamento</button>
+            </div>
+
+            <div id="statusMessage" class="status-message" style="display: none;"></div>
         </div>
 
-
-        <div class="title-row">
-            <div id="loader" class="loader" style="display: none;"></div>
-            <h3 id="summary-title">Resumo do áudio</h3>
-
-        </div>
-
-        <div class="summary-box" id="summary-box"></div>
-
-        <div class="button-row">
-            <button id="copy-btn" class="action-button copy-btn" disabled>
-                <span class="material-icons">content_copy</span>
-                Copiar Resumo
-            </button>
-            <button id="download-btn" class="action-button download-btn" disabled>
-                <span class="material-icons">download</span>
-                Baixar Transcrição em TXT
+        <div class="summary-area">
+            <div class="summary-title">
+                <span class="material-icons">graphic_eq</span>
+                <span id="summaryStatus">Aguardando</span>
+            </div>
+            <div id="summary" class="summary-output">
+                <p class="no-summary-message" id="noSummaryMessage" style="display:none;">
+                    Não foi habilitado Impressões/Resumo com IA para esse processamento.
+                </p>
+            </div>
+            <button class="btn-disabled" id="downloadBtn" type="button" disabled>
+                <span class="material-icons" id="downloadIcon">description</span>
+                <span id="downloadText">Baixar Transcrição</span>
             </button>
         </div>
     </div>
 </div>
-
-<div id="toast" class="toast">Texto do resumo copiado com sucesso</div>
-<script src="/js/script.js"></script>
+<script th:src="@{/js/script.js}"></script>
 </body>
 </html>
