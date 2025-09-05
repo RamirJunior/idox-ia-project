@@ -4,6 +4,7 @@ package br.gov.ma.idox.controller;
 import br.gov.ma.idox.dto.TaskIdResponse;
 import br.gov.ma.idox.dto.TaskStatusResponse;
 import br.gov.ma.idox.service.TaskService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,11 +22,13 @@ public class AudioController {
     @Autowired
     private TaskService taskService;
 
+    @Operation(summary = "/index", description = "carrega a interface principal", tags = "Audio Controller")
     @GetMapping("/index")
     public String openIndex() {
         return "index";
     }
 
+    @Operation(summary = "/process", description = "transcreve o arquivo carregado", tags = "Audio Controller")
     @PostMapping("/process")
     public ResponseEntity<TaskIdResponse> transcribe(
             @NotNull @RequestParam("audioFile") MultipartFile audioFile,
@@ -55,12 +58,14 @@ public class AudioController {
 //        return output;
 //    }
 
+    @Operation(summary = "/cancel/{taskId}", description = "cancela a tarefa pelo id", tags = "Audio Controller")
     @DeleteMapping("/cancel/{taskId}")
     public ResponseEntity<TaskStatusResponse> cancelProcess(@PathVariable String taskId) {
         var cancelledTask = taskService.cancelTask(taskId);
         return ResponseEntity.status(HttpStatus.OK).body(cancelledTask);
     }
 
+    @Operation(summary = "/status/{taskId}", description = "retorna o status da task pelo id", tags = "Audio Controller")
     @GetMapping("/status/{taskId}")
     public ResponseEntity<TaskStatusResponse> getStatus(@PathVariable String taskId) {
         TaskStatusResponse status = taskService.getStatus(taskId);
